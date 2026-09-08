@@ -1,3 +1,14 @@
+/* İşlem Yok — modelin çekirdeği. ÜRETİLMİŞ DOSYA, ELLE DÜZENLEME.
+   Kaynak: ../site/index.html
+   Üretim: node dilimle.js   ·   2026-09-08
+   Site index.html değiştiğinde bu script yeniden çalıştırılır. */
+/* TAHMIN UFKU — sabit: secili zaman diliminin 15, 30, 60 ve 120 INTERVAL'i.
+   Ufkun gun cinsinden sabitlenmesi (eski 1/3/5/8 gun) saatlik grafikte
+   anlamsizdi; ufuk artik barin kendi olceginde tanimli ve zaman dilimiyle
+   birlikte kayar. Ust sinir 120 interval. */
+const HZ_FIXED=[15,30,60,120];
+const HZ_CAP=120;
+
 function quantile(a,p){if(!a.length)return NaN;const s=Float64Array.from(a).sort();
   const i=(s.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(i-lo);}
 function solve(A,b){const n=b.length,M=A.map((r,i)=>r.concat([b[i]]));
@@ -11,7 +22,6 @@ function ols(X,y,rows){const k=X[0].length,A=Array.from({length:k},()=>new Float
   for(let a=0;a<k;a++)for(let c=0;c<a;c++)A[a][c]=A[c][a];
   return solve(A.map(r=>Array.from(r)),Array.from(b));}
 
-
 /* ========== NY yerel saat (DST dahil) ========== */
 const nyFmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour12:false,
   weekday:'short',hour:'2-digit'});
@@ -23,7 +33,6 @@ function nyHOW(ms){
   const p=nyFmt.formatToParts(new Date(ms));
   let d=0,h=0;for(const x of p){if(x.type==='weekday')d=DOW[x.value];if(x.type==='hour')h=parseInt(x.value,10)%24;}
   const v=d*24+h;nyCache.set(key,v);return v;}
-
 
 /* ========== model ========== */
 const KD=4,KW=3;
@@ -174,7 +183,7 @@ function calib(zArr,mgArr,idxEnd,CAL,ps,mgNow,warm){
 }
 const PS=[0.05,0.10,0.25,0.75,0.90,0.95];
 
-function computeCore(rows,perDay,tfms){
+function computeCore(rows,perDay,tfms,hzBars){
     const M=buildVol(rows,perDay),n=rows.length;
     const cum=new Float64Array(n+1);for(let k=0;k<n;k++)cum[k+1]=cum[k]+M.ret[k];
     /* mevsimsellikten arindirilmis kare getiri ve kumulatif toplamlari:
@@ -203,8 +212,27 @@ function computeCore(rows,perDay,tfms){
         let e=0;for(const [a,b2,y] of pts){const p=w*a+(1-w)*b2;e+=(y-p)*(y-p);}
         if(e<bestE){bestE=e;best=w;}}
       return best;}
-    const HZ=[1,3,5,8].map(x=>x*perDay).filter(x=>x>=1);
     const CAL=Math.max(120*perDay,300);
+    /* TAHMIN UFKU — sabit set, veri sinirlar. Ust sinir dort kosuldan gelir:
+       120 interval tavani, evalCombo'nun u.length>=hz*4 kosulu, kalibrasyon
+       penceresine yer kalmasi ve backtest'te en az ~12 ortusmeyen pencere
+       kalmasi. Backtest'te ufuk basina ~(n-btStart0)/h - 1 pencere kalir;
+       120 interval gunluk zaman diliminde 9 bagimsiz denemeye kadar duserek
+       kapsama testini anlamsizlastiriyordu. Kirpma sessiz degil: hzNote. */
+    const btStart0=Math.max(M.WARM+CAL+10,Math.floor(n*0.6));
+    const HZ_MINWIN=12;
+    const hzMaxBars=Math.min(
+      HZ_CAP,
+      Math.floor((n-M.WARM)/4),
+      n-M.WARM-CAL-10,
+      Math.floor((n-btStart0)/(HZ_MINWIN+1)));
+    if(hzMaxBars<1)return null;
+    const wantBars=(hzBars&&hzBars.length?hzBars:HZ_FIXED)
+      .map(x=>Math.max(1,Math.min(HZ_CAP,Math.round(x)))).sort((a,b)=>a-b);
+    const HZ=[...new Set(wantBars.map(b=>Math.min(b,hzMaxBars)))].sort((a,b)=>a-b);
+    const hzNote=wantBars.some(b=>b>hzMaxBars)
+      ? `Seçilen ufuk için yeterli geçmiş yok; en fazla ${hzMaxBars} interval'a çekildi.`
+      : '';
     const calNote=perDay===1
       ? 'Günlük zaman diliminde kalibrasyon penceresi 300 bara genişletildi (araştırmada doğrulanan 120 gün yerine). Sonuçları daha temkinli okuyun.' : '';
     /* Ileri koni icin tam-orneklem agirligi mesru: gelecegi tahmin ediyoruz. */
@@ -235,7 +263,7 @@ function computeCore(rows,perDay,tfms){
     const Z={};for(const hz of HZ){const z=new Float64Array(n).fill(NaN);
       for(let k=M.WARM;k<n-hz;k++){const V=Vh[hz][k];if(V>0)z[k]=(cum[k+hz]-cum[k])/Math.sqrt(V);}
       Z[hz]=z;}
-        const steps=8*perDay,F=futureSeason(rows,M,steps,tfms,perDay);
+        const steps=HZ[HZ.length-1],F=futureSeason(rows,M,steps,tfms,perDay);
     /* ileri koni: her adim icin ufka gore agirlik (HZ arasi enterpolasyon) */
     const wAt=s=>{const hz=s+1;
       if(hz<=HZ[0])return WBL[HZ[0]];
@@ -255,93 +283,8 @@ function computeCore(rows,perDay,tfms){
     const cone={};for(const p of PS){cone[p]=[];
       for(let sx=0;sx<steps;sx++){
         const zi=interpZ(HZ,HQ,p,sx+1);cone[p].push(P0*Math.exp(zi*Math.sqrt(Vc[sx])));}}
-    return {rows,perDay,n,M,HZ,CAL,calNote,Vh,Z,mg,cum,Vc,P0,mgNow,HQ,cone,blendW,fts:F.ts,steps};
+    return {rows,perDay,n,M,HZ,CAL,calNote,hzNote,Vh,Z,mg,cum,Vc,P0,mgNow,HQ,cone,blendW,fts:F.ts,steps};
 }
-
-function computeCore(rows,perDay,tfms){
-    const M=buildVol(rows,perDay),n=rows.length;
-    const cum=new Float64Array(n+1);for(let k=0;k<n;k++)cum[k+1]=cum[k]+M.ret[k];
-    /* mevsimsellikten arindirilmis kare getiri ve kumulatif toplamlari:
-       tum pencere hesaplarini O(1) yapar */
-    const dsv=new Float64Array(n);
-    for(let k=1;k<n;k++){const sv=isFinite(M.sea[k])?Math.max(M.sea[k],1e-6):1;dsv[k]=M.ret[k]*M.ret[k]/sv;}
-    const cdsv=new Float64Array(n+1);for(let k=0;k<n;k++)cdsv[k+1]=cdsv[k]+dsv[k];
-    const cSea=new Float64Array(n+1);
-    for(let k=0;k<n;k++)cSea[k+1]=cSea[k]+(isFinite(M.sea[k])?M.sea[k]:1);
-    const W30=30*perDay, W365=Math.min(Math.floor(n*0.6),365*perDay);
-    const bWin=(i,w)=>{const a=Math.max(1,i-w);return (cdsv[i]-cdsv[a])/Math.max(1,i-a);};
-    /* KARISIM AGIRLIGI: h bar sonrasinin gerceklesen varyansini, 30g ve 1y taban
-       varyansinin log-karisimi ile en iyi aciklayan agirlik. Nedensel, ufka ozel.
-       Volatilite soklari soner; uzun ufukta 30g tek basina yaniltir. */
-    function fitBlend(hh,upto){
-      /* uzun pencere icin en az 120 gunluk etkin gecmis yeterli sayilir;
-         boylece agirlik, gecmis test doneminden ONCE de kestirilebilir */
-      const minL=Math.min(W365,120*perDay);
-      const pts=[];
-      for(let k=M.WARM+minL;k<upto-hh;k+=Math.max(1,Math.floor(hh/2))){
-        const s30=bWin(k,W30),sL=bWin(k,W365),fut=(cdsv[k+hh]-cdsv[k])/hh;
-        if(s30>0&&sL>0&&fut>0)pts.push([Math.log(s30),Math.log(sL),Math.log(fut)]);}
-      if(pts.length<40)return 1;
-      let best=1,bestE=Infinity;
-      for(let w=0;w<=1.0001;w+=0.05){
-        let e=0;for(const [a,b2,y] of pts){const p=w*a+(1-w)*b2;e+=(y-p)*(y-p);}
-        if(e<bestE){bestE=e;best=w;}}
-      return best;}
-    const HZ=[1,3,5,8].map(x=>x*perDay).filter(x=>x>=1);
-    const CAL=Math.max(120*perDay,300);
-    const calNote=perDay===1
-      ? 'Günlük zaman diliminde kalibrasyon penceresi 300 bara genişletildi (araştırmada doğrulanan 120 gün yerine). Sonuçları daha temkinli okuyun.' : '';
-    /* Ileri koni icin tam-orneklem agirligi mesru: gelecegi tahmin ediyoruz. */
-    const WBL={};for(const hz of HZ)WBL[hz]=fitBlend(hz,n);
-    /* NEDENSEL agirlik serisi: gecmis testte kullanilan agirlik yalnizca o ana
-       kadarki veriyle secilir. Onceki surumde tam-orneklem agirligi gecmis
-       teste giriyordu — kucuk ama ilkesel bir sizintiydi; giderildi. */
-    const RB=60*perDay,WBLt={};
-    for(const hz of HZ){
-      const w=new Float64Array(n).fill(1);
-      for(let t0=M.WARM;t0<n;t0+=RB){
-        const cur=fitBlend(hz,t0),e=Math.min(n,t0+RB);
-        for(let i=t0;i<e;i++)w[i]=cur;}
-      WBLt[hz]=w;}
-    /* ufka ozel varyans tahmini: V_h(i) = tabanKarisim_h(i) * (mevsimsel toplam) */
-    const baseEff=(i,hz)=>{const w=WBLt[hz][i],s30=bWin(i,W30),sL=bWin(i,W365);
-      if(!(s30>0)||!(sL>0))return NaN;
-      return Math.exp(w*Math.log(s30)+(1-w)*Math.log(sL));};
-    const Vh={};
-    for(const hz of HZ){const v=new Float64Array(n).fill(NaN);
-      for(let k=M.WARM;k<n-hz;k++){const b=baseEff(k,hz);
-        if(isFinite(b))v[k]=b*(cSea[k+hz]-cSea[k]);}
-      Vh[hz]=v;}
-    /* trend buyuklugu (kosullandirma degiskeni) */
-    const s2=new Float64Array(n+1);for(let k=0;k<n;k++)s2[k+1]=s2[k]+(isFinite(M.sig[k])?M.sig[k]*M.sig[k]:0);
-    const L5=5*perDay,mg=new Float64Array(n).fill(NaN);
-    for(let k=L5;k<n;k++){const v=(s2[k]-s2[k-L5]);if(v>0)mg[k]=Math.abs((cum[k]-cum[k-L5])/Math.sqrt(v));}
-    const Z={};for(const hz of HZ){const z=new Float64Array(n).fill(NaN);
-      for(let k=M.WARM;k<n-hz;k++){const V=Vh[hz][k];if(V>0)z[k]=(cum[k+hz]-cum[k])/Math.sqrt(V);}
-      Z[hz]=z;}
-        const steps=8*perDay,F=futureSeason(rows,M,steps,tfms,perDay);
-    /* ileri koni: her adim icin ufka gore agirlik (HZ arasi enterpolasyon) */
-    const wAt=s=>{const hz=s+1;
-      if(hz<=HZ[0])return WBL[HZ[0]];
-      for(let k=1;k<HZ.length;k++)if(hz<=HZ[k]){
-        const t=(hz-HZ[k-1])/(HZ[k]-HZ[k-1]);return WBL[HZ[k-1]]*(1-t)+WBL[HZ[k]]*t;}
-      return WBL[HZ[HZ.length-1]];};
-    const b30=bWin(n,W30), b365=bWin(n,W365);
-    const Vc=[];let accS=0;
-    for(let s=0;s<steps;s++){
-      accS+=F.sea[s];
-      const w=wAt(s), bE=Math.exp(w*Math.log(b30)+(1-w)*Math.log(b365));
-      Vc.push(bE*accS);}
-    const blendW=WBL[HZ[HZ.length-1]];
-    const P0=rows[n-1].c,mgNow=mg[n-1];
-    const HQ={};for(const hz of HZ){HQ[hz]=calib(Z[hz],mg,n-hz,CAL,PS,isFinite(mgNow)?mgNow:0);}
-    if(Object.values(HQ).some(v=>!v))return null;
-    const cone={};for(const p of PS){cone[p]=[];
-      for(let sx=0;sx<steps;sx++){
-        const zi=interpZ(HZ,HQ,p,sx+1);cone[p].push(P0*Math.exp(zi*Math.sqrt(Vc[sx])));}}
-    return {rows,perDay,n,M,HZ,CAL,calNote,Vh,Z,mg,cum,Vc,P0,mgNow,HQ,cone,blendW,fts:F.ts,steps};
-}
-/* ========== ana akis ========== */
 
 function interpZ(HZ,HQ,p,step){
   if(step<=HZ[0])return HQ[HZ[0]][p];
@@ -350,6 +293,7 @@ function interpZ(HZ,HQ,p,step){
   return HQ[HZ[HZ.length-1]][p];
 }
 
+/* ===== tek kombinasyonu degerlendiren cekirdek ===== */
 function evalCombo(S,side,hz,qs,Rm,N,seed,demean){
   const P0=S.P0,M=S.M,n=S.rows.length;
   const sg=Math.sqrt(S.Vc[hz-1]);

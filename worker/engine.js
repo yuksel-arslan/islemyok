@@ -12,11 +12,11 @@ globalThis.sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const _core={};
 new Function('say','document','sleep','__x',
   fs.readFileSync(path.join(__dirname,'engine_core.js'),'utf8')+
-  '\n;__x.computeCore=computeCore;__x.evalCombo=evalCombo;'
+  '\n;__x.computeCore=computeCore;__x.evalCombo=evalCombo;__x.HZ_FIXED=HZ_FIXED;'
 )(globalThis.say,globalThis.document,globalThis.sleep,_core);
-const computeCore=_core.computeCore, evalCombo=_core.evalCombo;
+const computeCore=_core.computeCore, evalCombo=_core.evalCombo, HZ_FIXED=_core.HZ_FIXED;
 
-const TFC={"1h":{ms:36e5,perDay:24,pages:11},"4h":{ms:144e5,perDay:6,pages:6},"1d":{ms:864e5,perDay:1,pages:3}};
+const TFC={"1h":{ms:36e5,perDay:24,pages:16},"4h":{ms:144e5,perDay:6,pages:12},"1d":{ms:864e5,perDay:1,pages:5}};
 const ASSETS=[["BTCUSDT","BTC"],["ETHUSDT","ETH"],["SOLUSDT","SOL"],["BNBUSDT","BNB"],
  ["XRPUSDT","XRP"],["DOGEUSDT","DOGE"],["ADAUSDT","ADA"],["LINKUSDT","LINK"],
  ["AVAXUSDT","AVAX"],["LTCUSDT","LTC"]];
@@ -30,6 +30,17 @@ async function klines(sym,tf){
   try{have=JSON.parse(fs.readFileSync(file,'utf8'));}catch(e){}
   const fetch1=async u=>{const r=await fetch(u);if(!r.ok)throw new Error('Binance '+r.status);return r.json();};
   if(have.length){
+    /* GERİYE TAMAMLAMA: önbellek daha küçük bir bar tavanıyla doldurulmuş olabilir.
+       İleri güncelleme yalnız yeni barları getirir, eskiyi asla; pages büyüdüğünde
+       geçmiş kendiliğinden derinleşmezdi. (Sitede de aynı düzeltme var.) */
+    for(let g=0;g<cfg.pages&&have.length<cfg.pages*1000;g++){
+      const d=await fetch1(`https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=1000&endTime=${have[0].t-1}`);
+      if(!d.length)break;
+      const older=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]})).filter(x=>x.t<have[0].t);
+      if(!older.length)break;
+      have=older.concat(have);
+      if(d.length<1000)break;
+      await sleep(80);}
     let start=have[have.length-1].t;                  /* son bar yeniden (kapanmamış olabilir) */
     for(let g=0;g<cfg.pages;g++){
       const d=await fetch1(`https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=1000&startTime=${start}`);
@@ -68,7 +79,7 @@ async function scanMarket(tf,log){
       log(`${disp} verisi…`);
       const rows=await klines(sym,tf);
       if(rows.length<perDay*260)throw new Error(`yetersiz veri (${rows.length})`);
-      const CC=computeCore(rows,perDay,cfg.ms);
+      const CC=computeCore(rows,perDay,cfg.ms,HZ_FIXED);
       if(!CC)throw new Error('kalibrasyon yetersiz');
       CC.sym=sym;CC.disp=disp;CC.tf=tf;cores.push(CC);
     }catch(e){fails.push(`${disp}: ${e.message}`);}
