@@ -81,7 +81,4 @@ Değişkenler Railway panel → servis → **Variables** altında. Deploy loglar
 
 * Kapanış raporu yok (v1.1: açık planlar Neon'a yazılır, her koşuda SL/TP/BE kontrol edilir).
 * Yalnız kripto spot 1h (vadeli/fx sitede var; worker'a v1.2'de).
-* Şans eşiği permütasyonu ufka göre değişken örneklem kullanır (`max(300, 40000/hz)`),
-  sitede sabit 1500. Uzun ufukta gürültü eşiği yukarı çeker; gerçek tarama 1500 ile
-  koştuğu için karşılaştırma tam eşleşmiyor. Açık madde.
 * `CACHE_DIR` kalıcı değilse her yeniden başlatmada veri baştan iner (~2 dk, zarar yok).

@@ -98,8 +98,12 @@ async function scanMarket(tf,log){
   for(let rep=0;rep<12;rep++){
     let best=-9;
     for(const S of cores)for(const [sd,hz,q,rm] of combos){
-      const Nn=Math.max(300,Math.round(40000/hz));
-      const o=evalCombo(S,sd,hz,q,rm,Nn,3000+rep*7919,true);
+      /* orneklem GERCEK taramayla ayni (1500). Ufka gore azaltmak (eski
+         max(300,40000/hz)) uzun ufukta tahmini gurultulendiriyordu; esik
+         bu draw'larin MAKSIMUMU oldugu icin gurultu esigi yukari cekiyor,
+         ustelik gercek sonuclar 1500 ile uretildigi icin karsilastirma
+         eslesmiyordu. Site ile ayni. */
+      const o=evalCombo(S,sd,hz,q,rm,1500,3000+rep*7919,true);
       if(o&&o.ev>best)best=o.ev;}
     nullMax.push(best);}
   nullMax.sort((a,b)=>a-b);
