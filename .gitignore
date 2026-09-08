@@ -1,0 +1,18 @@
+# Kokte yalniz repoya ait olanlar izlenir; oradaki eski dosyalar (fotograf,
+# zip, tekil html) repo disinda kalir.
+/*
+!/site/
+!/worker/
+!/.gitignore
+!/README.md
+
+# uretilen / indirilen
+worker/node_modules/
+site/.wrangler/
+worker/.wrangler/
+*.bak-*
+
+# sir: asla girmemeli
+.env
+.env.*
+.dev.vars
