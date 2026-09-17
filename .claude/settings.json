@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)", "Bash(git log*)", "Bash(git diff*)", "Bash(git show*)", "Bash(git branch*)",
+      "Bash(git checkout*)", "Bash(git pull*)", "Bash(git fetch*)", "Bash(git add*)", "Bash(git commit*)",
+      "Bash(git push*)", "Bash(git merge*)",
+      "Bash(npm test*)", "Bash(npm run *)", "Bash(npm install*)",
+      "Bash(node *)", "Bash(cd worker*)", "Bash(cd site*)",
+      "Read", "Edit", "Write", "Glob", "Grep"
+    ],
+    "deny": [
+      "Bash(git config*)", "Bash(env*)", "Bash(printenv*)", "Bash(set)", "Bash(cat *.env*)",
+      "Bash(curl*)", "Bash(wget*)", "Bash(rm -rf*)", "Bash(git push --force*)", "Bash(git reset --hard*)"
+    ]
+  }
+}
