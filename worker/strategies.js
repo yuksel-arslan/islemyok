@@ -11,6 +11,7 @@
 'use strict';
 const {walkForward,backtest,TFMS}=require('./backtest');
 const {ASSETS}=require('./engine');
+const F=require('./funding');
 
 const PD={'1h':24,'4h':6,'1d':1};
 
@@ -41,6 +42,12 @@ const STRATS={
   /* kısa vadeli geri dönüş: 3 günlük z-skor uçtaysa ters yön */
   revert3:{hzDays:1,rm:1.5,pick:(c)=>c.each((b,i,pd,vol)=>{const L=3*pd,r=logRet(b,i,L);
     if(!isFinite(r)||!(vol>0))return 0;const z=r/(vol*Math.sqrt(L));return z<-2?1:z>2?-1:0;})},
+  /* FONLAMA (perp carry): long'lar ödüyorsa short, tersi long. 3 gün tutuş; gerçekleşen
+     fonlama ödemesi R'ye eklenir (perp:true). 24s ort = son 3 ödeme. */
+  fund_pct:{hzDays:3,rm:1.5,perp:true,pick:(c)=>c.syms.map(s=>{const f=c.fund(s);if(!f)return null;
+    const p=F.pctRank(f,c.T,3,270);return p>=0.9?{sym:s,side:-1}:p<=0.1?{sym:s,side:1}:null;}).filter(Boolean)},
+  fund_abs:{hzDays:3,rm:1.5,perp:true,pick:(c)=>c.syms.map(s=>{const f=c.fund(s);if(!f)return null;
+    const a=F.avgN(f,c.T,3);return a>=0.0003?{sym:s,side:-1}:a<=-0.0003?{sym:s,side:1}:null;}).filter(Boolean)},
   /* kesitsel momentum: 30 günlük getiriye göre ilk 3 long, son 3 short */
   xsmom30:{hzDays:5,rm:2,pick:(c)=>{
     const rs=c.syms.map(s=>[s,logRet(c.bars(s),c.i(s),30*c.pd)]).filter(x=>isFinite(x[1])).sort((a,b)=>b[1]-a[1]);
@@ -63,7 +70,8 @@ function makeGenerator(name,tf,rowsBySym,opts={}){
   const rndSide=opts.randomSide?seeded(opts.seed||1):null;
   return (T,sliced)=>{
     const syms=Object.keys(sliced).filter(s=>sliced[s].length>1);
-    const ctx={pd,syms,bars:s=>sliced[s],i:s=>sliced[s].length-1,
+    const fb=opts.fundingBySym||{};
+    const ctx={pd,syms,T,fund:s=>fb[s]||null,bars:s=>sliced[s],i:s=>sliced[s].length-1,
       each:(f)=>syms.map(s=>{const b=sliced[s],i=b.length-1;return {sym:s,side:f(b,i,pd,vol[s][i])};}).filter(x=>x.side)};
     const out=[];
     for(const {sym,side} of def.pick(ctx)){
@@ -86,8 +94,20 @@ const KAPANDI=new Set(['stop','be','tp2','expired']);
 /* planın yönünü çevir: aynı giriş, aynı d_stop/rm/hz/vade → ayna seviyeler */
 function flipPlan(p){return mkPlan(p.sym,p.disp,-p.side,p.entry,p.t0,p.hz,(p.t_end-p.t0)/p.hz,p.rm,p.d_stop/Math.sqrt(p.hz),p.strat);}
 
+/* perp stratejilerinde tutuş boyunca gerçekleşen fonlama: long öder (+r), short alır */
+function addFunding(res,plans,fundingBySym){
+  res.rows.forEach((row,i)=>{const p=plans[i],s=fundingBySym&&fundingBySym[p.sym];
+    if(!s||!KAPANDI.has(row.state))return;
+    const paid=F.sumBetween(s,p.t0,row.at||p.t_end);
+    row.fundR=-p.side*paid/p.d_stop;row.R+=row.fundR;});
+  const {aggregate}=require('./backtest');
+  return {...res,...aggregate(res.rows)};
+}
+
 function runStrategy(name,rowsBySym,tf,o={}){
-  const real=walkForward({rowsBySym,tf,model:name,generate:makeGenerator(name,tf,rowsBySym),step:o.step,warmup:o.warmup,from:o.from,to:o.to,log:o.log});
+  const def=STRATS[name];
+  let real=walkForward({rowsBySym,tf,model:name,generate:makeGenerator(name,tf,rowsBySym,{fundingBySym:o.fundingBySym}),step:o.step,warmup:o.warmup,from:o.from,to:o.to,log:o.log});
+  if(def.perp)real=addFunding(real,real.plans,o.fundingBySym);
   const done=real.rows.filter(r=>KAPANDI.has(r.state));
   const R=done.map(r=>r.R);
   const t=tStat(R),[h1,h2]=halves(done);
@@ -96,10 +116,13 @@ function runStrategy(name,rowsBySym,tf,o={}){
   const K=o.controls==null?50:o.controls, ctrl=[];
   for(let k=0;k<K;k++){const rnd=seeded(1000+k);
     const flipped=plans.map(p=>rnd()<0.5?flipPlan(p):p);
-    ctrl.push(backtest(flipped,rowsBySym,{}).totalR);}
+    let c=backtest(flipped,rowsBySym,{});
+    if(def.perp)c=addFunding(c,flipped,o.fundingBySym);
+    ctrl.push(c.totalR);}
   const p=K?ctrl.filter(x=>x>=real.totalR).length/K:NaN;
   const pass=done.length>=30&&t>=2.5&&h1>0&&h2>0&&(K?p<=0.02:false);
-  return {name,n:done.length,totalR:real.totalR,avgR:real.avgR,t,winRate:real.winRate,profitFactor:real.profitFactor,
+  const fundTotal=done.reduce((a,r)=>a+(r.fundR||0),0);
+  return {name,n:done.length,totalR:real.totalR,fundTotal,avgR:real.avgR,t,winRate:real.winRate,profitFactor:real.profitFactor,
           maxDrawdown:real.maxDrawdown,h1,h2,p,ctrlMean:K?ctrl.reduce((a,b)=>a+b,0)/K:NaN,ctrl,pass,anchors:real.anchors,rows:real.rows};
 }
 
@@ -111,6 +134,8 @@ function compareReport(results){
   for(const r of results){
     const pf=isFinite(r.profitFactor)?r.profitFactor.toFixed(2):'∞';
     L.push(`${r.name.padEnd(9)} ${String(r.n).padStart(4)}  ${p2(r.totalR).padStart(8)}  ${p2(r.avgR)}  ${r.t.toFixed(2).padStart(5)}  ${(r.winRate*100).toFixed(0).padStart(5)}%  ${pf.padStart(5)}  ${r.maxDrawdown.toFixed(2).padStart(5)}  ${p2(r.h1)}  ${p2(r.h2)}  ${p2(r.ctrlMean).padStart(8)}  ${isFinite(r.p)?r.p.toFixed(2):'—'}    ${r.pass?'GEÇTİ':'kaldı'}`);}
+  const fr=results.filter(r=>STRATS[r.name]&&STRATS[r.name].perp);
+  if(fr.length)L.push('',...fr.map(r=>`${r.name}: toplam R'nin ${p2(r.fundTotal)}R'si gerçekleşen fonlama ödemesi, ${p2(r.totalR-r.fundTotal)}R'si fiyat`));
   L.push('','şans_ort: aynı girişler rastgele yönle (K tekrar) ortalama toplam R · p_şans: rastgelenin gerçeği geçme oranı');
   return L.join('\n');
 }
@@ -134,9 +159,12 @@ if(require.main===module){
     for(const [sym,disp] of eng.ASSETS){
       if(has('--offline')){try{rowsBySym[sym]=JSON.parse(fs.readFileSync(eng.cacheFile(sym,tf,pages),'utf8'));}catch(e){console.error(`${disp}: önbellek yok`);}}
       else{process.stderr.write(`${disp} verisi…\n`);rowsBySym[sym]=await eng.klines(sym,tf,pages);}}
+    const fundingBySym={};
+    if(names.some(n=>STRATS[n]&&STRATS[n].perp)){
+      for(const [sym,disp] of eng.ASSETS){const s=F.loadFunding(sym);if(s)fundingBySym[sym]=s;else console.error(`${disp}: fonlama yok (node funding.js --fetch)`);}}
     const results=[];
     for(const n of names){const T=Date.now();
-      const r=runStrategy(n,rowsBySym,tf,{step,warmup,from,to,controls});
+      const r=runStrategy(n,rowsBySym,tf,{step,warmup,from,to,controls,fundingBySym});
       process.stderr.write(`${n}: n=${r.n} toplam ${r.totalR.toFixed(2)}R t=${r.t.toFixed(2)} p=${r.p} · ${((Date.now()-T)/1000).toFixed(0)}s\n`);
       results.push(r);}
     console.log(compareReport(results));
