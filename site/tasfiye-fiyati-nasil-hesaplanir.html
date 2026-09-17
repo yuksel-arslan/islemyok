@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -63,13 +63,20 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 .disc{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-top:26px;line-height:1.8}
 @media(max-width:700px){.wrap{padding:0 15px 70px}body{font-size:16px}table{display:block;overflow-x:auto}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.navrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;margin-bottom:22px}
+.navlinks{display:flex;gap:4px;margin-left:auto}
+.navlinks a{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 10px;border-bottom:2px solid transparent}
+.navlinks a:hover{color:var(--b)}.navlinks a[aria-current]{color:var(--bTx);border-bottom-color:var(--bTx)}
+.navlinks a:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+@media(max-width:640px){.navlinks{margin-left:0}.navlinks a{padding:8px 6px;font-size:10px;letter-spacing:.08em}}
 </style>
 </head>
 <body>
 <button class="theme mono" id="theme">Karanlık</button>
 <div class="wrap">
 <header>
-  <a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a>
+  <div class="navrow"><a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a><nav class="navlinks" aria-label="Site"><a href="/sinyal-test.html">Sinyalini test et</a><a href="/strateji-testleri.html">Testler</a><a href="/rehber.html">Rehber</a></nav></div>
   <div class="eyebrow">Rehber · 6 dk okuma · <a href="/rehber.html" style="color:var(--muted)">tüm rehberler</a></div>
   <h1>Tasfiye fiyatı <em>nasıl</em> hesaplanır?</h1>
   <p class="lede">Kaldıraç kullandığın an bir yerlerde görünmez bir çizgi oluşur: fiyat oraya değerse pozisyonun sen karar veremeden kapanır. O çizginin yerini bilmemek, bilmemeyi seçmektir.</p>
@@ -102,9 +109,11 @@ SHORT: tasfiye ≈ giriş × (1 + 1/kaldıraç − bakım_marjı_oranı)</div>
 </div>
 <script>
 const root=document.documentElement,tb=document.getElementById('theme');
-function setTheme(t){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';}
-setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+/* tema: ana sayfayla aynı anahtar (localStorage 'theme'); varsayılan koyu; seçim tüm sayfalarda kalıcı */
+function setTheme(t,save){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';
+  if(save)try{localStorage.setItem('theme',t)}catch(e){}}
+setTheme((()=>{try{return localStorage.getItem('theme')||'dark'}catch(e){return 'dark'}})());
+tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark',true);
 </script>
 </body>
 </html>

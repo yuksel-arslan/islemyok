@@ -70,6 +70,12 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   Rapor fiyat/fonlama payını ayrı yazar. Fiyat serisi spot (perp yakın vekil). Testler: `funding.test.js`.
   `npm run funding -- --fetch --pages 5` · `npm run funding -- --now` ·
   `npm run strategies -- --tf 1h --pages 40 --offline --strats fund_pct,fund_abs --csv fund.csv`
+* `../site/sinyal-core.js` — **ortak çekirdek (tarayıcı + Node)**: replayPlan/netR, sinyal ayrıştırıcı, toPlan,
+  fillPlan (sıkı), monkeyTest, singleSignal (yönsüz blok bootstrap: şansın isabeti, başabaş, tasfiye).
+  `kanal.js` ve `site/sinyal-test.html` bunu kullanır; ayrıştırıcı/oynatıcı tek kopya. Ağ erişimi yok.
+  Testler: `sinyal-core.test.js`. **Site:** `sinyal-test.html` — "Tek sinyal" (yapıştır/doldur → çıta) ve
+  "Kanalın geçmişi" (tarihli mesajlar → sıkı/cömert oynatma, 50 maymun, bant grafiği). Her şey tarayıcıda;
+  Binance verisi kullanıcının tarayıcısından çekilir, bize hiçbir şey gelmez.
 * `kanal.js` — **Telegram sinyal kanalı testi ("maymun testi")**. `--discover` tohum kanallardaki
   t.me bağlantılarını gezer, sinyal sayısına göre sıralar; `--fetch` herkese açık önizlemeyi (t.me/s) çeker,
   toleranslı ayrıştırıcı (TR/EN, emoji yön, bölge girişi, numaralı hedefler; hedef girişin doğru tarafında ve

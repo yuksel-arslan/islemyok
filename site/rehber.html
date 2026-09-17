@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -55,19 +55,26 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 .disc{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-top:26px;line-height:1.8}
 @media(max-width:700px){.wrap{padding:0 15px 70px}body{font-size:16px}table{display:block;overflow-x:auto}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.navrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;margin-bottom:22px}
+.navlinks{display:flex;gap:4px;margin-left:auto}
+.navlinks a{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 10px;border-bottom:2px solid transparent}
+.navlinks a:hover{color:var(--b)}.navlinks a[aria-current]{color:var(--bTx);border-bottom-color:var(--bTx)}
+.navlinks a:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+@media(max-width:640px){.navlinks{margin-left:0}.navlinks a{padding:8px 6px;font-size:10px;letter-spacing:.08em}}
 </style>
 </head>
 <body>
 <button class="theme mono" id="theme">Karanlık</button>
 <div class="wrap">
 <header>
-  <a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a>
+  <div class="navrow"><a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a><nav class="navlinks" aria-label="Site"><a href="/sinyal-test.html">Sinyalini test et</a><a href="/strateji-testleri.html">Testler</a><a href="/rehber.html" aria-current="page">Rehber</a></nav></div>
   <div class="eyebrow">Rehber · 6 yazı</div>
   <h1>Önce hayatta kal,<br><em>sonra</em> işlem düşün.</h1>
   <p class="lede">Sinyal yok, tüyo yok. Tasfiyenin, stop'un, kaldıracın ve fonlamanın matematiği — sayılarla, kısa ve dürüst. Aracın günlük taraması: <span class="mono">t.me/islemyok</span></p>
 </header>
 <article style="padding-top:24px">
-<a class="next" href="/strateji-testleri.html"><b>Strateji ve sinyal testleri: 10 strateji + 4 kanal, sıfır geçen</b><span>Trend takibi, kırılım, geri dönüş, kesitsel momentum, fonlama carry ve kendi modelimiz — 4.5 yıl, şans kontrollü, kodu açık. Skor tablosu ve yöntem.</span></a><a class="next" href="/tasfiye-fiyati-nasil-hesaplanir.html"><b>Tasfiye fiyatı nasıl hesaplanır?</b><span>Kaldıraçlı pozisyonda tasfiye fiyatının formülü, bakım marjının etkisi ve sayısal örnek. Tasfiye neden stop'tan önce gelmemeli?</span></a><a class="next" href="/stop-loss-nereye-konur.html"><b>Stop loss nereye konur?</b><span>Stop'u psikolojik seviyeye değil, fiyatın normal gürültüsünün dışına koymak: oynaklık tabanlı stop mesafesi, sayısal örnek ve yaygın hatalar.</span></a><a class="next" href="/kaldirac-kac-olmali.html"><b>Kaldıraç kaç olmalı?</b><span>Kaldıraç riskin kendisi değil, boyutun çarpanıdır. Risk yüzdesinden kaldıraç türetme formülü, tasfiye kontrolü ve sayısal örnek.</span></a><a class="next" href="/backtest-neden-yaniltir.html"><b>Backtest neden yanıltır?</b><span>Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.</span></a><a class="next" href="/fonlama-orani-nedir.html"><b>Fonlama oranı nedir?</b><span>Perpetual vadeli işlemlerde fonlama oranının mekanizması, 8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet örneği ve pozisyon taşıma maliyeti.</span></a><a class="next" href="/pozisyon-buyuklugu-nasil-hesaplanir.html"><b>Pozisyon büyüklüğü nasıl hesaplanır?</b><span>Risk yüzdesi yöntemiyle pozisyon büyüklüğü formülü, sayısal örnek ve ardışık kayıpların matematiği: neden işlem başına %1-2 risk?</span></a>
+<a class="next" href="/sinyal-test.html"><b>Sinyalini test et</b><span>Aldığın sinyali açmadan önce yapıştır: risk/ödül, tasfiye, şansın isabeti, sinyalcinin gizli iddiası. Kanalın geçmişini yapıştır: maymun testi.</span></a><a class="next" href="/strateji-testleri.html"><b>Strateji ve sinyal testleri: 10 strateji + 4 kanal, sıfır geçen</b><span>Trend takibi, kırılım, geri dönüş, kesitsel momentum, fonlama carry ve kendi modelimiz — 4.5 yıl, şans kontrollü, kodu açık. Skor tablosu ve yöntem.</span></a><a class="next" href="/tasfiye-fiyati-nasil-hesaplanir.html"><b>Tasfiye fiyatı nasıl hesaplanır?</b><span>Kaldıraçlı pozisyonda tasfiye fiyatının formülü, bakım marjının etkisi ve sayısal örnek. Tasfiye neden stop'tan önce gelmemeli?</span></a><a class="next" href="/stop-loss-nereye-konur.html"><b>Stop loss nereye konur?</b><span>Stop'u psikolojik seviyeye değil, fiyatın normal gürültüsünün dışına koymak: oynaklık tabanlı stop mesafesi, sayısal örnek ve yaygın hatalar.</span></a><a class="next" href="/kaldirac-kac-olmali.html"><b>Kaldıraç kaç olmalı?</b><span>Kaldıraç riskin kendisi değil, boyutun çarpanıdır. Risk yüzdesinden kaldıraç türetme formülü, tasfiye kontrolü ve sayısal örnek.</span></a><a class="next" href="/backtest-neden-yaniltir.html"><b>Backtest neden yanıltır?</b><span>Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.</span></a><a class="next" href="/fonlama-orani-nedir.html"><b>Fonlama oranı nedir?</b><span>Perpetual vadeli işlemlerde fonlama oranının mekanizması, 8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet örneği ve pozisyon taşıma maliyeti.</span></a><a class="next" href="/pozisyon-buyuklugu-nasil-hesaplanir.html"><b>Pozisyon büyüklüğü nasıl hesaplanır?</b><span>Risk yüzdesi yöntemiyle pozisyon büyüklüğü formülü, sayısal örnek ve ardışık kayıpların matematiği: neden işlem başına %1-2 risk?</span></a>
 </article>
 <footer>
   <p class="disc">islemyok.com · x.com/islemyok · t.me/islemyok<br>
@@ -76,9 +83,11 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 </div>
 <script>
 const root=document.documentElement,tb=document.getElementById('theme');
-function setTheme(t){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';}
-setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+/* tema: ana sayfayla aynı anahtar (localStorage 'theme'); varsayılan koyu; seçim tüm sayfalarda kalıcı */
+function setTheme(t,save){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';
+  if(save)try{localStorage.setItem('theme',t)}catch(e){}}
+setTheme((()=>{try{return localStorage.getItem('theme')||'dark'}catch(e){return 'dark'}})());
+tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark',true);
 </script>
 </body>
 </html>

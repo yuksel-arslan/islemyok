@@ -9,54 +9,8 @@ const fs=require('fs'),path=require('path');
 const CACHE=process.env.CACHE_DIR||'/tmp/islemyok-cache';
 const DAY=864e5;
 
-/* ---------- ayrıştırıcı: değişken formatlara toleranslı ---------- */
-const NUM='([0-9][0-9.,]*)';
-const num=s=>{if(s==null)return NaN;s=String(s).replace(/\s/g,'');
-  /* 1.234,56 (TR) → 1234.56 ; 63,000 → 63000 ; 0,45 → 0.45 */
-  if(/,\d{1,2}$/.test(s)&&/\./.test(s))s=s.replace(/\./g,'').replace(',','.');
-  else if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');
-  else s=s.replace(',','.');
-  const v=parseFloat(s);return isFinite(v)?v:NaN;};
-const nums=str=>{const out=[];const re=/(?<![A-Za-z])([0-9][0-9.,]*)(?![0-9])/g;let m;
-  while((m=re.exec(str)))if(m[1]!=='.'&&m[1]!==',')out.push(num(m[1]));return out.filter(isFinite);};
-
-function parseSignal(text,t){
-  if(!text)return null;
-  const T=text.replace(/ /g,' ');
-  const symM=T.match(/\b([A-Z]{2,10})\s*[\/-]?\s*(USDT|USDT\.P|PERP|USD)\b/)||T.match(/#?\b([A-Z]{2,10})\b(?=[^a-z]*(long|short|al|sat|buy|sell|giriş|entry)\b)/i);
-  if(!symM)return null;
-  const base=symM[1].toUpperCase();if(['LONG','SHORT','BUY','SELL','SL','TP','ENTRY','USDT','STOP','TARGET','HEDEF'].includes(base))return null;
-  const sym=base+'USDT';
-  let side=0;
-  if(/\b(long|buy|al[ıi]?[mn]?|alış|🟢|📈)\b/i.test(T)||/🟢|📈/.test(T))side=1;
-  if(/\b(short|sell|sat(ış)?|🔴|📉)\b/i.test(T)||/🔴|📉/.test(T))side=side?0:-1;   /* ikisi de varsa belirsiz */
-  if(!side)return null;
-  const grab=(re)=>{const m=T.match(re);return m?nums(m[1]):[];};
-  /* etiket sonrası tek basamaklı sıra numarası olabilir: "TP1:", "Hedef 2 -" */
-  const LIST='((?:[0-9][0-9.,]*[ \\t\\-–\\/,|]*){1,8})';
-  const entry=grab(new RegExp('\\b(?:entry|giri[şs]|gir|buy zone|al[ıi]m|entry zone|e)\\s*(?:\\d(?=\\s*[:=\\-–]))?\\s*[:=\\-–]?[^0-9\\n]{0,10}'+LIST,'i'));
-  const sl=grab(/\b(?:stop[\s-]?loss|stop|sl|zarar[\s-]?kes|zarar durdur)\b\s*(?:\d(?=\s*[:=\-–]))?\s*[:=\-–]?[^0-9\n]{0,10}([0-9][0-9.,]*)/i);
-  /* hedefler: her etiketten sonra gelen liste; "TP1: a TP2: b" ve "Hedef: a / b / c" ikisi de */
-  const tps=[];{const re=new RegExp('\\b(?:take[ \\-]?profit|targets?|tps?|hedef(?:ler)?|kar al|k[âa]r al)\\s*(?:\\d(?=\\s*[:=\\-–]))?\\s*[:=\\-–]?[^0-9\\n]{0,10}'+LIST,'gi');let m;
-    while((m=re.exec(T)))for(const v of nums(m[1]))if(!tps.includes(v))tps.push(v);}
-  if(!sl.length||!tps.length)return null;
-  const dropIdx=l=>l.length>1?l.filter(v=>!(Number.isInteger(v)&&v>=1&&v<=9)):l;
-  const ent=dropIdx(entry),tpl=dropIdx(tps);
-  const e=ent.length?ent.reduce((a,b)=>a+b,0)/ent.length:NaN;   /* bölge verildiyse ortası */
-  const stop=sl[0],tpList=tpl.filter(x=>x!==stop);
-  if(!tpList.length)return null;
-  /* yön tutarlılığı: long → sl<tp ; short → sl>tp */
-  const ok=side>0?stop<Math.min(...tpList):stop>Math.max(...tpList);
-  if(!ok)return null;
-  /* hedefler girişin DOĞRU tarafında ve girişten uzak olmalı; giriş verilmediyse stop'a göre bak.
-     "TP 184.7" = giriş fiyatı gibi ayrıştırma hataları planı açılır açılmaz "hedef" yapar. */
-  const ref=e;
-  const tpOk=isFinite(ref)?tpList.filter(v=>side>0?v>ref*1.003:v<ref*0.997)
-                          :tpList.filter(v=>side>0?v>stop*1.006:v<stop*0.994);
-  if(!tpOk.length)return null;
-  if(isFinite(ref)&&(side>0?stop>=ref:stop<=ref))return null;   /* stop girişin yanlış tarafında */
-  return {sym,side,entry:e,sl:stop,tps:tpOk.slice().sort((a,b)=>side>0?a-b:b-a),t};
-}
+const CORE=require('../site/sinyal-core.js');
+const {parseSignal,num,nums,toPlan,seeded,replayPlan,netR,KAPANDI}=CORE;
 
 /* ---------- t.me/s önizlemesi ---------- */
 async function fetchChannel(name,pages=20){
@@ -84,18 +38,7 @@ async function fetchChannel(name,pages=20){
   return out;
 }
 
-/* ---------- oynatma + maymun ---------- */
-function toPlan(s,px){
-  const entry=isFinite(s.entry)?s.entry:px;           /* giriş verilmediyse mesaj anındaki fiyat */
-  const d_stop=Math.abs(Math.log(entry/s.sl));if(!(d_stop>0))return null;
-  const tp1=s.tps.length>1?s.tps[0]:null,tp2=s.tps[s.tps.length-1];
-  const rm=Math.abs(Math.log(tp2/entry))/d_stop;
-  return {sym:s.sym,disp:s.sym.replace('USDT',''),side:s.side,entry,sl:s.sl,tp1,tp2,rm,d_stop,t0:s.t,t_end:s.t+30*DAY,
-          hz:720,offEntry:isFinite(s.entry)&&isFinite(px)?Math.abs(Math.log(s.entry/px)):0};
-}
-function seeded(seed){let x=(seed|0)||1;return()=>((x^=x<<13,x^=x>>>17,x^=x<<5)>>>0)/4294967296;}
-const KAPANDI=new Set(['stop','be','tp2','expired']);
-
+/* ---------- oynatma + maymun (çekirdek: toPlan/seeded/KAPANDI) ---------- */
 async function testChannel(name,o={}){
   const eng=require('./engine');const {backtest,aggregate}=require('./backtest');const {mkPlan}=require('./strategies');
   const data=JSON.parse(fs.readFileSync(path.join(CACHE,`kanal-${name}.json`),'utf8'));
