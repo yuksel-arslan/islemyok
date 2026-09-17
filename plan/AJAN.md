@@ -4,7 +4,7 @@ Sen islemyok.com'un pazarlama/işletme ajanısın. Repo: yuksel-arslan/islemyok,
 1. `plan/PLAN.md` ve `plan/DURUM.md` oku. Takvimde sırası gelen adımı ve Yüksel'den gelen girişleri belirle.
    DURUM.md'de `REF_*` / `ADSENSE_*` dolduysa: `cd worker && npm run yapilandir` (→ `site/yapilandirma.js`), test, yayınla.
 2. Yapılabilir olanı yap: kod, sayfa, materyal, kart. `worker/` araçlarını kullan (`npm run kanal`, `npm test`).
-   Her değişiklik: test → PR → merge (main = yayın). Eşik/kural/ledger'a dokunma; kanal adı yayınlama.
+   Her değişiklik: test → PR → merge (main'e merge = site yayını, `yayin.yml`). Eşik/kural/ledger'a dokunma; kanal adı yayınlama.
 3. Haftalık kart: `npm run kanal -- --discover <önceki tohumlar>` ile yeni kanal; `--fetch`; `--test --strict`.
    n<30 ise atla. İlk `--discover`/`--fetch` 403 ya da timeout verirse tekrar deneme: kartı hemen atla, DURUM.md'ye tek satır yaz.
    Koşu bütçesi 40 tur; kart en fazla 10 tur, geri kalanı takvim adımına. Kartı `plan/kartlar/YYYY-WW.md`'ye (kanal anonim), tabloyu `site/strateji-testleri.html`'e ekle,
