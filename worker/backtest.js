@@ -67,7 +67,7 @@ function modelGenerate(eng,tf){
               rm:lv.Rm,d_stop:h.plan.dStop,ev:lv.ev,se:lv.se,famHi:R.famHi,hz:lv.hz,
               t0:T,t_end:T+lv.hz*ms};
     });
-    out._scan={famHi:R.famHi,cores:R.cores,fails:R.fails||[]};
+    out._scan={famHi:R.famHi,cores:R.cores,fails:R.fails||[],tops:R.tops||[]};
     return out;
   };
 }
@@ -89,6 +89,8 @@ function walkForward(o){
     if(o.from&&T<o.from)continue;
     if(o.to&&T>o.to)break;
     anchors.push(T);}
+  if(o.from&&anchors.length&&anchors[0]>o.from)
+    log(`not: --from ${new Date(o.from).toISOString().slice(0,10)} ama ilk çapa ${new Date(anchors[0]).toISOString().slice(0,10)} (warmup=${warmup} bar; daha erken için --warmup küçült)`);
   const plans=[],open={},scans=[];
   let flipped=0;
   anchors.forEach((T,k)=>{
@@ -97,14 +99,24 @@ function walkForward(o){
     const t1=Date.now();
     const cand=generate(T,sliced)||[];
     const sc={t:T,cand:cand.length,ms:Date.now()-t1,famHi:cand._scan?cand._scan.famHi:undefined};
+    /* teşhis: en iyi sonuç ve hangi kapıda kaldığı (canlı noTradeMessage ile aynı mantık) */
+    const tops=(cand._scan&&cand._scan.tops||[]).filter(t=>isFinite(t.ev));
+    if(tops.length){
+      const b=tops.slice().sort((a,c)=>c.ev-a.ev)[0];
+      sc.best={disp:b.disp,ev:b.ev,se:b.se,okChance:!!b.okChance,okErr:!!b.okErr};
+      sc.nearMiss=tops.filter(t=>t.okChance&&!t.okErr).map(t=>t.disp);
+      sc.gap=b.ev-sc.famHi;}                                 /* eşiğe uzaklık (+ geçti) */
     scans.push(sc);
     for(const pl of cand){
       const key=pl.sym+'|'+pl.side, opp=pl.sym+'|'+(-pl.side);
       if(dedupe&&open[key]&&open[key].t_end>T)continue;          /* zaten açık, tekrar yok */
       if(dedupe&&open[opp]&&open[opp].t_end>T){open[opp].t_end=T;flipped++;delete open[opp];}
       plans.push(pl);open[key]=pl;}
+    const p2=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
+    const why=sc.best?` · en iyi ${sc.best.disp} ${p2(sc.best.ev)}R±${(2*sc.best.se).toFixed(2)} [şans ${sc.best.okChance?'✓':'✗'} hata ${sc.best.okErr?'✓':'✗'}]`+
+                      (sc.nearMiss.length?` · yakın kaçan: ${sc.nearMiss.join(',')}`:''):'';
     log(`[${k+1}/${anchors.length}] ${new Date(T).toISOString().slice(0,10)} → ${cand.length} plan`+
-        (isFinite(sc.famHi)?` (eşik +${sc.famHi.toFixed(2)}R)`:'')+` · ${sc.ms}ms`);
+        (isFinite(sc.famHi)?` (eşik +${sc.famHi.toFixed(2)}R)`:'')+why+` · ${sc.ms}ms`);
   });
   const res=backtest(plans,rowsBySym,{funding});
   return {tf,anchors:anchors.length,flipped,scans,...res};
@@ -122,6 +134,18 @@ function formatReport(res){
     `Kazanma: ${(res.winRate*100).toFixed(1)}% (${res.wins}K / ${res.losses}Z)   Profit factor: ${pf}`,
     `Max drawdown: ${res.maxDrawdown.toFixed(2)}R   Ort. tutuş: ${res.avgHoldBars.toFixed(1)} bar`,
     `Durumlar: ${st}`];
+  const sc=(res.scans||[]).filter(s=>s.best);
+  if(sc.length){
+    const g1=sc.filter(s=>s.best.okChance).length, g2=sc.filter(s=>s.best.okChance&&s.best.okErr).length;
+    const nm=sc.filter(s=>s.nearMiss&&s.nearMiss.length).length;
+    const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    lines.push('',`Çapa özeti (${sc.length}): şans kapısını geçen ${g1} · iki kapıyı geçen ${g2} · yakın kaçan olan ${nm}`,
+      `  ort. eşik +${mean(sc.map(s=>s.famHi)).toFixed(2)}R · ort. en iyi ${p2(mean(sc.map(s=>s.best.ev)))}R · ort. uzaklık ${p2(mean(sc.map(s=>s.gap)))}R`);
+    const close=sc.slice().sort((a,b)=>b.gap-a.gap).slice(0,5);
+    lines.push('  eşiğe en yakın 5 çapa:');
+    for(const s of close)
+      lines.push(`    ${new Date(s.t).toISOString().slice(0,10)} ${String(s.best.disp).padEnd(5)} ${p2(s.best.ev)}R±${(2*s.best.se).toFixed(2)}  eşik +${s.famHi.toFixed(2)}  uzaklık ${p2(s.gap)}  [şans ${s.best.okChance?'✓':'✗'} hata ${s.best.okErr?'✓':'✗'}]`);
+  }
   if(res.rows.length){
     lines.push('','Planlar:');
     for(const r of res.rows){
@@ -137,7 +161,13 @@ function toCsv(res){
   return [h,...rows].join('\n');
 }
 
-module.exports={backtest,aggregate,runOne,walkForward,modelGenerate,formatReport,toCsv,TFMS};
+function scansCsv(res){
+  const h='t,famHi,best,best_ev,best_se,okChance,okErr,gap,nearMiss,plans,ms';
+  return [h,...(res.scans||[]).map(s=>[new Date(s.t).toISOString(),s.famHi,s.best?s.best.disp:'',s.best?s.best.ev:'',s.best?s.best.se:'',
+    s.best?s.best.okChance:'',s.best?s.best.okErr:'',s.gap==null?'':s.gap,(s.nearMiss||[]).join('|'),s.cand,s.ms].join(','))].join('\n');
+}
+
+module.exports={backtest,aggregate,runOne,walkForward,modelGenerate,formatReport,toCsv,scansCsv,TFMS};
 
 /* ---- CLI ----
    node backtest.js [--tf 1h] [--step N] [--warmup N] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
@@ -178,7 +208,8 @@ if(require.main===module){
     const res=walkForward({rowsBySym,tf,generate:modelGenerate(eng,tf),step,warmup,from,to,funding,
                            log:m=>process.stderr.write(m+'\n')});
     console.log(formatReport(res));
-    if(opt('--csv'))fs.writeFileSync(opt('--csv'),toCsv(res));
+    if(opt('--csv')){fs.writeFileSync(opt('--csv'),toCsv(res));
+      fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-capa.csv',scansCsv(res));}
     if(opt('--json'))fs.writeFileSync(opt('--json'),JSON.stringify({...res,equity:res.equity},null,1));
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }

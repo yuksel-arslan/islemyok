@@ -2,7 +2,7 @@
 /* backtest birim testleri — sentetik barlar, ağ yok. Çalıştır: npm test */
 const test=require('node:test');
 const assert=require('node:assert');
-const {backtest,aggregate,runOne,walkForward,modelGenerate,formatReport,TFMS}=require('./backtest');
+const {backtest,aggregate,runOne,walkForward,modelGenerate,formatReport,scansCsv,TFMS}=require('./backtest');
 
 const D=0.1;                             // d_stop (~%10 stop)
 const COST=(2*11/1e4)/D;                 // netR'nin düştüğü komisyon+kayma = 0.022
@@ -115,4 +115,39 @@ test('modelGenerate: scanRows hit → plan alanları (entry=P0, sl/tp, t_end=T+h
   assert.strictEqual(p.rm,2); assert.strictEqual(p.d_stop,0.1); assert.strictEqual(p.famHi,0.3);
   assert.strictEqual(p.t0,5000); assert.strictEqual(p.t_end,5000+30*TFMS['1h']);
   assert.strictEqual(out._scan.famHi,0.3);
+  assert.ok(Array.isArray(out._scan.tops));
+});
+
+/* ---------- çapa teşhisi: "neden sinyal yok" ---------- */
+test('walk-forward teşhis: en iyi sonuç, kapılar, eşiğe uzaklık ve yakın kaçan kaydedilir', ()=>{
+  const gen=(T)=>{const out=[];
+    out._scan={famHi:0.20,cores:2,fails:[],tops:[
+      {disp:'BTC',ev:0.25,se:0.30,okChance:true, okErr:false},   // şansı geçti, hata payında kaldı
+      {disp:'ETH',ev:0.05,se:0.02,okChance:false,okErr:true}]};
+    return out;};
+  const res=walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:5,generate:gen});
+  const sc=res.scans[0];
+  assert.strictEqual(sc.best.disp,'BTC'); near(sc.best.ev,0.25); near(sc.gap,0.05);
+  assert.strictEqual(sc.best.okChance,true); assert.strictEqual(sc.best.okErr,false);
+  assert.deepStrictEqual(sc.nearMiss,['BTC']);
+  const rep=formatReport(res);
+  assert.match(rep,/Çapa özeti \(3\): şans kapısını geçen 3 · iki kapıyı geçen 0 · yakın kaçan olan 3/);
+  assert.match(rep,/eşiğe en yakın 5 çapa/);
+  const csv=scansCsv(res).split('\n');
+  assert.strictEqual(csv.length,4);
+  const f=csv[1].split(',');                              // t,famHi,best,best_ev,best_se,okChance,okErr,gap,nearMiss,plans,ms
+  assert.strictEqual(f[2],'BTC'); near(+f[3],0.25); near(+f[4],0.30);
+  assert.strictEqual(f[5],'true'); assert.strictEqual(f[6],'false'); near(+f[7],0.05); assert.strictEqual(f[8],'BTC');
+});
+
+test('walk-forward teşhis: tops boşsa best yok, rapor çapa özeti basmaz', ()=>{
+  const res=walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:5,generate:()=>[]});
+  assert.strictEqual(res.scans[0].best,undefined);
+  assert.doesNotMatch(formatReport(res),/Çapa özeti/);
+});
+
+test('walk-forward: --from ilk çapadan önceyse log uyarır', ()=>{
+  const logs=[];
+  walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:10,from:1000,generate:()=>[],log:m=>logs.push(m)});
+  assert.ok(logs.some(m=>/^not: --from/.test(m)));
 });
