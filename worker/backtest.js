@@ -127,7 +127,7 @@ function walkForward(o){
   });
   const res=backtest(plans,rowsBySym,{funding});
   const shadow=shadowPlans.length?backtest(shadowPlans,rowsBySym,{funding}):null;
-  return {tf,model:o.model||'base',anchors:anchors.length,flipped,scans,shadow,...res};
+  return {tf,model:o.model||'base',anchors:anchors.length,flipped,scans,shadow,plans,...res};
 }
 
 /* ---- rapor ---- */

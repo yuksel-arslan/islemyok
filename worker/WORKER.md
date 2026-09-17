@@ -56,10 +56,12 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
 * `strategies.js` — **strateji laboratuvarı**: kural tabanlı, literatürde kripto için belgelenmiş
   dört aile (TSMOM 20/60g, Donchian 20/55g, 3g geri dönüş z±2, kesitsel momentum 30g ilk3/son3).
   Aynı stop/hedef makinesi (ufuk 1σ stop, rm×stop hedef), aynı oynatma, walk-forward, look-ahead yok
-  (vol nedensel EWMA). **Şans kontrolü içeride:** aynı girişler rastgele yönle K tekrar → p_şans.
+  (vol nedensel EWMA). **Şans kontrolü içeride (işaret-rastgeleleme):** gerçek plan listesi, yalnız yön
+  rastgele çevrilir, aynı giriş/vade/maliyet; K=50 tekrar → p_şans. Sentetik doğrulama: saf gürültüde
+  6/6 kaldı, trend rejiminde momentum/kırılım geçti, geri dönüş kaldı.
   **Karar kuralı önceden:** n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02 → GEÇTİ. Dakikalar sürer
   (computeCore yok). Testler: `strategies.test.js`. Fonlama primi: çevrimdışı veri yok, sonraya.
-  `npm run strategies -- --tf 1h --pages 40 --offline [--strats tsmom20,donch55] [--controls 20] [--csv s.csv]`
+  `npm run strategies -- --tf 1h --pages 40 --offline [--strats tsmom20,donch55] [--controls 50] [--csv s.csv]`
 * `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
   bariyer/maliyet/stop/vol konisi; tek fark simülasyon başlangıçlarının tüm geçmişten değil,
   **şu anki duruma** (işaretli momentum 5g/20g + vol rejimi) en yakın K pencereden çekilmesi.

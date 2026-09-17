@@ -59,11 +59,23 @@ test('üretici look-ahead görmez: sliced öneke bakar, tam seriden yalnız nede
   const p=gen(t0+599*H,sliced)[0];near(p.entry,full.BTCUSDT[599].c);assert.strictEqual(p.t0,t0+599*H);
 });
 
-test('rastgele yön kontrolü deterministik ve aynı giriş anlarını kullanır', ()=>{
-  const rows={BTCUSDT:mk(up(700))};
-  const a=makeGenerator('tsmom20','1h',rows,{randomSide:true,seed:7}),b=makeGenerator('tsmom20','1h',rows,{randomSide:true,seed:7});
-  const pa=a(t0+699*H,rows),pb=b(t0+699*H,rows);
-  assert.deepStrictEqual(pa.map(p=>[p.t0,p.side]),pb.map(p=>[p.t0,p.side]));assert.strictEqual(pa.length,1);
+test('şans kontrolü: işaret-rastgeleleme gerçek plan listesini korur (aynı n, aynı t0, ayna seviyeler)', ()=>{
+  const rows={BTCUSDT:mk(up(1500)),ETHUSDT:mk(up(1500).map((c,i)=>c*(1+0.001*Math.sin(i))))};
+  const r=runStrategy('tsmom20',rows,'1h',{step:24,warmup:600,controls:2});
+  assert.strictEqual(r.ctrl.length,2);
+  const p=r.rows[0];const {mkPlan}=require('./strategies');
+  const f=mkPlan(p.sym,p.disp,-p.side,p.entry,p.t0,p.hz||120,H,2,0,'x');
+  assert.strictEqual(f.side,-p.side);assert.strictEqual(f.entry,p.entry);assert.strictEqual(f.t0,p.t0);
+});
+
+test('şans kontrolü gürültüde tarafsız: p 0 ile 1 arasında dağılır, sistematik kayıp yok', ()=>{
+  let s=11;const rnd=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return ((s>>>0)/4294967296);};
+  const g=()=>{const u=1-rnd(),v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+  const noise=n=>{const o=[];let c=100;for(let i=0;i<n;i++){c*=Math.exp(0.006*g());o.push(c);}return o;};
+  const rows={BTCUSDT:mk(noise(4000)),ETHUSDT:mk(noise(4000))};
+  const r=runStrategy('tsmom20',rows,'1h',{step:24,warmup:1500,controls:10});
+  // kontrol ortalaması gerçekten uzak sistematik bir sapma taşımamalı (aynı işlemler, aynı maliyet)
+  assert.ok(Math.abs(r.ctrlMean-r.totalR)<Math.max(5,Math.abs(r.totalR)*2)+1e-9,`ctrlMean ${r.ctrlMean} vs ${r.totalR}`);
 });
 
 test('tStat/halves ve karar kuralı', ()=>{

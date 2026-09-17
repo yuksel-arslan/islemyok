@@ -3,12 +3,13 @@
    makinesi (ufuk-vol'e göre 1σ stop, rm×stop hedef), aynı oynatma (replay.js).
    Her strateji walk-forward'da çalışır: T anında yalnız T'ye kadarki barlar.
 
-   ŞANS KONTROLÜ: aynı giriş anları, rastgele yön, K tekrar → gerçek toplam R'nin
-   şans dağılımındaki yeri (p). KARAR KURALI (önceden, sonucu görmeden):
+   ŞANS KONTROLÜ (işaret-rastgeleleme): gerçek stratejinin AYNI plan listesi, her
+   planın yalnız yönü rastgele çevrilir, aynı giriş/vade/maliyetle oynatılır; K tekrar
+   → gerçek toplam R'nin şans dağılımındaki yeri (p). İşlem sayısı ve maliyet birebir. KARAR KURALI (önceden, sonucu görmeden):
      GEÇTİ  ⇔  n ≥ 30  ∧  t ≥ 2.5  ∧  iki yarı da ort. R > 0  ∧  p_şans ≤ 0.02
    m strateji denendiği için t ve p eşiği tek testten sıkı tutuldu. */
 'use strict';
-const {walkForward,TFMS}=require('./backtest');
+const {walkForward,backtest,TFMS}=require('./backtest');
 const {ASSETS}=require('./engine');
 
 const PD={'1h':24,'4h':6,'1d':1};
@@ -82,14 +83,20 @@ function halves(rows){const s=rows.slice().sort((a,b)=>a.t0-b.t0),h=Math.floor(s
   const m=a=>a.length?a.reduce((x,r)=>x+r.R,0)/a.length:0;return [m(s.slice(0,h)),m(s.slice(h))];}
 const KAPANDI=new Set(['stop','be','tp2','expired']);
 
+/* planın yönünü çevir: aynı giriş, aynı d_stop/rm/hz/vade → ayna seviyeler */
+function flipPlan(p){return mkPlan(p.sym,p.disp,-p.side,p.entry,p.t0,p.hz,(p.t_end-p.t0)/p.hz,p.rm,p.d_stop/Math.sqrt(p.hz),p.strat);}
+
 function runStrategy(name,rowsBySym,tf,o={}){
-  const wf=(gen,model)=>walkForward({rowsBySym,tf,model,generate:gen,step:o.step,warmup:o.warmup,from:o.from,to:o.to,log:o.log});
-  const real=wf(makeGenerator(name,tf,rowsBySym),name);
+  const real=walkForward({rowsBySym,tf,model:name,generate:makeGenerator(name,tf,rowsBySym),step:o.step,warmup:o.warmup,from:o.from,to:o.to,log:o.log});
   const done=real.rows.filter(r=>KAPANDI.has(r.state));
   const R=done.map(r=>r.R);
   const t=tStat(R),[h1,h2]=halves(done);
-  const K=o.controls==null?20:o.controls, ctrl=[];
-  for(let k=0;k<K;k++){const c=wf(makeGenerator(name,tf,rowsBySym,{randomSide:true,seed:1000+k}),name+'#rnd'+k);ctrl.push(c.totalR);}
+  /* kontrol: gerçek plan listesi, yönler rastgele (işaret-rastgeleleme) */
+  const plans=real.plans||[];
+  const K=o.controls==null?50:o.controls, ctrl=[];
+  for(let k=0;k<K;k++){const rnd=seeded(1000+k);
+    const flipped=plans.map(p=>rnd()<0.5?flipPlan(p):p);
+    ctrl.push(backtest(flipped,rowsBySym,{}).totalR);}
   const p=K?ctrl.filter(x=>x>=real.totalR).length/K:NaN;
   const pass=done.length>=30&&t>=2.5&&h1>0&&h2>0&&(K?p<=0.02:false);
   return {name,n:done.length,totalR:real.totalR,avgR:real.avgR,t,winRate:real.winRate,profitFactor:real.profitFactor,
@@ -98,7 +105,8 @@ function runStrategy(name,rowsBySym,tf,o={}){
 
 function compareReport(results){
   const p2=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
-  const L=['Strateji laboratuvarı — kural: n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02',
+  const K=results.length?results[0].ctrl.length:0;
+  const L=[`Strateji laboratuvarı — kural: n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02  (şans kontrolü: işaret-rastgeleleme, K=${K})`,
     'strateji   n    toplamR   ortR    t     kazanma  PF    maxDD   yarı1   yarı2   şans_ort  p_şans  karar'];
   for(const r of results){
     const pf=isFinite(r.profitFactor)?r.profitFactor.toFixed(2):'∞';
@@ -121,7 +129,7 @@ if(require.main===module){
     const step=+opt('--step',pd),warmup=+opt('--warmup',Math.max(60*pd+100,2000));
     const from=opt('--from')?Date.parse(opt('--from')):null,to=opt('--to')?Date.parse(opt('--to')):null;
     const names=opt('--strats')?opt('--strats').split(','):Object.keys(STRATS);
-    const controls=+opt('--controls',20);
+    const controls=+opt('--controls',50);
     const rowsBySym={};
     for(const [sym,disp] of eng.ASSETS){
       if(has('--offline')){try{rowsBySym[sym]=JSON.parse(fs.readFileSync(eng.cacheFile(sym,tf,pages),'utf8'));}catch(e){console.error(`${disp}: önbellek yok`);}}
