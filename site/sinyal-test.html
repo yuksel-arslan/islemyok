@@ -110,7 +110,8 @@ table.sig{font-size:12px}table.sig td{padding:7px 8px}
 <section id="tab-one" style="border:none;padding:0">
   <p class="note">Sinyal metnini olduğu gibi yapıştır ya da alanları doldur. Fiyat verisi Binance'ten, tarayıcından çekilir; hiçbir şey bize gönderilmez.</p>
   <label class="mono" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Sinyal metni (isteğe bağlı)
-  <textarea id="oneText" style="min-height:90px" placeholder="#BTCUSDT LONG&#10;Entry: 63000&#10;SL: 61500&#10;TP1: 64500 TP2: 66000"></textarea></label>
+  <textarea id="oneText" style="min-height:90px" placeholder="#BTCUSDT LONG&#10;Entry: 63000&#10;SL: 61500&#10;TP1: 64500 TP2: 66000"></textarea>
+  <div class="note" style="margin-top:6px"><span class="ex" id="oneDemo">örnek sinyal yükle</span> · varlık, yön, stop ve hedef yeterli; giriş boşsa şimdiki fiyat alınır</div></label>
   <div class="form">
     <label>Varlık<input id="oneSym" placeholder="BTC"></label>
     <label>Yön<select id="oneSide"><option value="1">Long</option><option value="-1">Short</option></select></label>
@@ -177,6 +178,7 @@ const pc=(x,d=0)=>(x*100).toFixed(d)+'%';
 const fmt=x=>x>=1000?x.toLocaleString('tr-TR',{maximumFractionDigits:0}):x>=1?x.toFixed(2):x.toPrecision(4);
 
 /* ---- tek sinyal ---- */
+$('oneDemo').onclick=()=>{$('oneText').value='#BTCUSDT LONG\nEntry: 63000\nSL: 61500\nTP1: 64500 TP2: 66000';$('oneText').dispatchEvent(new Event('input'));};
 $('oneText').addEventListener('input',()=>{const s=C.parseSignal($('oneText').value,Date.now());if(!s)return;
   $('oneSym').value=s.sym.replace('USDT','');$('oneSide').value=s.side;$('oneEntry').value=isFinite(s.entry)?s.entry:'';$('oneSl').value=s.sl;$('oneTp').value=s.tps[s.tps.length-1];});
 $('oneGo').onclick=async()=>{
