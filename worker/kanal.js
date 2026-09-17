@@ -93,6 +93,9 @@ async function testChannel(name,o={}){
   const eng=require('./engine');const {backtest,aggregate}=require('./backtest');const {mkPlan}=require('./strategies');
   const data=JSON.parse(fs.readFileSync(path.join(CACHE,`kanal-${name}.json`),'utf8'));
   const sigs=data.signals.filter(s=>isFinite(s.t));
+  /* silinmiş mesaj payı: id'ler ardışık; boşluk = silinmiş (kaybedenleri silen kanalın izi) */
+  const ids=(data.raw||[]).map(m=>m.id).filter(Number.isFinite).sort((a,b)=>a-b);
+  const deleted=ids.length>1?1-ids.length/(ids[ids.length-1]-ids[0]+1):NaN;
   /* veri derinliği sinyal tarihine göre: en eski sinyalden 30 gün öncesi yeter (1000 bar ≈ 42 gün) */
   /* en çok sinyal alan N coin yeter; tek-sinyallik coin'ler istatistiğe değil veri yüküne katkı yapar */
   const cnt={};for(const x of sigs)cnt[x.sym]=(cnt[x.sym]||0)+1;
@@ -113,6 +116,19 @@ async function testChannel(name,o={}){
     const i=b.findIndex(x=>x.t>s.t);const bar=i>0?b[i-1]:null;if(!bar){skipped.veriYok++;continue;}
     const p=toPlan(s,bar.c);if(!p){skipped.gecersiz++;continue;}
     if(p.offEntry>0.03){skipped.girisUzak++;continue;}         /* mesaj fiyatından >%3 uzak giriş: dolmamış say */
+    if(o.strict){
+      /* giriş dolmalı: mesajdan sonra fiyat giriş seviyesine değmeden hedefe giderse işlem yoktur.
+         Dolduğu bar bulunur; plan o bardan başlar. Stop/hedef önce gelirse (aynı barda) dolmuş sayılmaz. */
+      let fill=-1;
+      for(let j=i;j<b.length&&b[j].t<=s.t+3*DAY;j++){const x=b[j];
+        const touched=x.l<=p.entry&&x.h>=p.entry;
+        if(touched){fill=j;break;}
+        const hitTgt=p.side>0?x.h>=p.tp2:x.l<=p.tp2, hitSl=p.side>0?x.l<=p.sl:x.h>=p.sl;
+        if(hitTgt||hitSl)break;}                             /* girmeden bitti → dolmadı */
+      if(fill<0){skipped.dolmadi=(skipped.dolmadi||0)+1;continue;}
+      p.t0=b[fill].t;p.t_end=p.t0+30*DAY;
+      p.tp1=null;                                            /* yarı kapatma yok: stop ya da son hedef */
+    }
     plans.push(p);}
   const real=backtest(plans,bars,{});
   const done=real.rows.filter(r=>KAPANDI.has(r.state));
@@ -129,8 +145,8 @@ async function testChannel(name,o={}){
     const a=bb.find(x=>x.t>=t0),z=[...bb].reverse().find(x=>x.t<=t1);if(a&&z)hold=z.c/a.c-1;}
   const R=done.map(r=>r.R);const n=R.length;const m=n?real.totalR/n:0;
   const sd=n>1?Math.sqrt(R.reduce((a,x)=>a+(x-m)*(x-m),0)/(n-1)):0;const t=sd>0?m/(sd/Math.sqrt(n)):0;
-  const verdict=n<30?'YETERSİZ VERİ':(p<=0.02&&t>=2.5)?'MAYMUNU YENDİ':'MAYMUNU YENEMEDİ';
-  return {channel:name,messages:data.messages,parsed:sigs.length,tested:n,skipped,syms:syms.length,droppedSyms,droppedSigs,totalR:real.totalR,avgR:m,t,winRate:real.winRate,
+  const verdict=n<30?'YETERSİZ VERİ':(p<=0.02&&t>=2.5)?(o.strict?'MAYMUNU YENDİ':'MAYMUNU YENDİ (doğrulanmadı — --strict ile tekrar)'):'MAYMUNU YENEMEDİ';
+  return {channel:name,strict:!!o.strict,deleted,messages:data.messages,parsed:sigs.length,tested:n,skipped,syms:syms.length,droppedSyms,droppedSigs,totalR:real.totalR,avgR:m,t,winRate:real.winRate,
           maxDrawdown:real.maxDrawdown,monkeyMean:mMean,monkeyLo:lo,monkeyHi:hi,p,hold,verdict,rows:real.rows,
           from:done.length?Math.min(...done.map(r=>r.t0)):null,to:done.length?Math.max(...done.map(r=>r.at||r.t_end)):null};
 }
@@ -139,8 +155,9 @@ function card(r){
   const p2=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(1);const d=t=>t?new Date(t).toISOString().slice(0,10):'—';
   const tl=x=>(x>=0?'+':'−')+Math.abs(x*1000).toFixed(0)+' TL';                  /* 100 bin TL, işlem başına %1 risk: 1R = 1000 TL */
   return [
-`🐒 ${r.channel} — ${r.verdict}`,
-`${r.tested} sinyal test edildi · en çok sinyal alan ${r.syms} coin (${r.messages} mesaj, ${r.parsed} sinyal ayrıştırıldı; ${r.droppedSyms} nadir coin'deki ${r.droppedSigs} sinyal dışarıda; atlanan: veri yok ${r.skipped.veriYok}, geçersiz ${r.skipped.gecersiz}, giriş uzak ${r.skipped.girisUzak}) · ${d(r.from)} → ${d(r.to)}`,
+`🐒 ${r.channel} — ${r.verdict}${r.strict?'  [sıkı: giriş dolmalı, yarı kapatma yok]':''}`,
+`Silinmiş mesaj payı: ${isFinite(r.deleted)?(r.deleted*100).toFixed(0)+'%':'—'}${r.deleted>0.15?'  ⚠ kaybedenler silinmiş olabilir':''}`,
+`${r.tested} sinyal test edildi · en çok sinyal alan ${r.syms} coin (${r.messages} mesaj, ${r.parsed} sinyal ayrıştırıldı; ${r.droppedSyms} nadir coin'deki ${r.droppedSigs} sinyal dışarıda; atlanan: veri yok ${r.skipped.veriYok}, geçersiz ${r.skipped.gecersiz}, giriş uzak ${r.skipped.girisUzak}${r.skipped.dolmadi?', giriş dolmadı '+r.skipped.dolmadi:''}) · ${d(r.from)} → ${d(r.to)}`,
 ``,
 `100 bin TL, işlem başına %1 risk:`,
 `  Kanalın sinyalleri : ${tl(r.totalR)}   (isabet %${(r.winRate*100).toFixed(0)}, en kötü çekilme ${r.maxDrawdown.toFixed(1)}R)`,
@@ -190,7 +207,7 @@ if(require.main===module){
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
     if(opt('--test'))for(const ch of list(opt('--test'))){
       try{process.stderr.write(`\n${ch}: veri çekiliyor…\n`);
-        const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50),maxSyms:+opt('--maxsyms',25),log:m=>process.stderr.write(m+'\n')});
+        const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50),maxSyms:+opt('--maxsyms',25),strict:a.includes('--strict'),log:m=>process.stderr.write(m+'\n')});
         console.log('\n'+card(r));
         if(opt('--csv'))fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-'+ch+'.csv',['t0,sym,side,entry,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,x.state,x.R].join(','))).join('\n'));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
@@ -205,6 +222,6 @@ if(require.main===module){
       for(const r of res)console.log(r.err?`${r.ch.padEnd(30)} HATA ${r.err}`:`${r.ch.padEnd(30)} ${String(r.messages).padStart(5)}  ${String(r.signals).padStart(6)}  ${r.last?new Date(r.last).toISOString().slice(0,10):'—'}`);
       const good=res.filter(r=>r.signals>=20&&r.last>Date.now()-180*DAY).map(r=>r.ch);
       console.log(good.length?`\ntest edilebilir (≥20 sinyal, son 6 ay aktif): ${good.join(',')}\nnpm run kanal -- --test ${good.join(',')} --csv kanal.csv`:'\nölçüte uyan kanal yok');}
-    if(!opt('--fetch')&&!opt('--test')&&!opt('--sample')&&!opt('--discover'))console.log('kullanım: node kanal.js --fetch a,b [--pages 20] | --test a,b [--offline] [--csv out.csv] | --sample a,b [--n 8] | --discover a,b [--max 40] [--pages 10]');
+    if(!opt('--fetch')&&!opt('--test')&&!opt('--sample')&&!opt('--discover'))console.log('kullanım: node kanal.js --fetch a,b [--pages 20] | --test a,b [--offline] [--csv out.csv] | --sample a,b [--n 8] | --discover a,b [--max 40] [--pages 10]   (test: --strict --maxsyms 25 --offline)');
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }
