@@ -22,8 +22,9 @@ Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd wo
 - **Üretilemedi.** `npm run kanal -- --discover crypto_trading_club,tuzonacryptu,cryptosignals0rg,revolutiontradingsignalsx`
   dört tohum için `t.me 403` döndü; `data-api.binance.vision` de 403. Bu ortamın ağ politikası Telegram önizlemesini ve
   Binance veri API'sini engelliyor; kanal keşfi/testi burada çalışmıyor. Kart uydurulmadı.
-  Çözüm (Yüksel, tek seferlik): Routine ortamının ağ izinlerine `t.me`, `data-api.binance.vision`, `api.binance.com` ekle;
-  ya da kartı kendi makinesinde `npm run kanal -- --discover …` / `--fetch` / `--test --strict` ile üretip `plan/kartlar/`'a koy.
+  Not: bu koşu Claude bulut sandbox'ındaydı. Ajan artık GitHub Actions'ta (ubuntu-latest, ağ açık) koşuyor; kart ilk
+  Actions koşusunda üretilmeli. Orada da 403 gelirse kartı kendi makinende `npm run kanal -- --discover …` / `--fetch` /
+  `--test --strict` ile üretip `plan/kartlar/`'a koy.
 
 ## Gelecek hafta (2026-39, 21 Eyl)
 - Linkler/kimlik geldiyse `npm run yapilandir` → `npm test` → yayın; referans.html'deki oranları borsa sayfasıyla kontrol et.
