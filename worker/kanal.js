@@ -48,7 +48,14 @@ function parseSignal(text,t){
   /* yön tutarlılığı: long → sl<tp ; short → sl>tp */
   const ok=side>0?stop<Math.min(...tpList):stop>Math.max(...tpList);
   if(!ok)return null;
-  return {sym,side,entry:e,sl:stop,tps:tpList.slice().sort((a,b)=>side>0?a-b:b-a),t};
+  /* hedefler girişin DOĞRU tarafında ve girişten uzak olmalı; giriş verilmediyse stop'a göre bak.
+     "TP 184.7" = giriş fiyatı gibi ayrıştırma hataları planı açılır açılmaz "hedef" yapar. */
+  const ref=e;
+  const tpOk=isFinite(ref)?tpList.filter(v=>side>0?v>ref*1.003:v<ref*0.997)
+                          :tpList.filter(v=>side>0?v>stop*1.006:v<stop*0.994);
+  if(!tpOk.length)return null;
+  if(isFinite(ref)&&(side>0?stop>=ref:stop<=ref))return null;   /* stop girişin yanlış tarafında */
+  return {sym,side,entry:e,sl:stop,tps:tpOk.slice().sort((a,b)=>side>0?a-b:b-a),t};
 }
 
 /* ---------- t.me/s önizlemesi ---------- */

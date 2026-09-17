@@ -36,3 +36,10 @@ test('parseSignal: etiketsiz sıra numarası ve rakamla başlayan fiyat', ()=>{
   const s=parseSignal('BTCUSDT LONG\nEntry 1 63000\nSL 61500\nTP1 64500 TP2 66000',T);
   assert.ok(s); assert.strictEqual(s.entry,63000); assert.strictEqual(s.sl,61500); assert.deepStrictEqual(s.tps,[64500,66000]);
 });
+
+test('parseSignal: hedef=giriş (ayrıştırma hatası) reddedilir; girişin yanlış tarafındaki hedef atılır', ()=>{
+  assert.strictEqual(parseSignal('TAOUSDT LONG\nEntry 184.7\nSL 179.6\nTP 184.7',T),null);
+  const s=parseSignal('TAOUSDT LONG\nEntry 184.7\nSL 179.6\nTP1 184.7 TP2 190 TP3 195',T);
+  assert.ok(s); assert.deepStrictEqual(s.tps,[190,195]);
+  assert.strictEqual(parseSignal('BTCUSDT LONG\nEntry 63000\nSL 64000\nTP 66000',T),null);   // stop girişin üstünde
+});
