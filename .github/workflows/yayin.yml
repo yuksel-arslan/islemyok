@@ -1,0 +1,23 @@
+# Site yayını — main'e site/ altında değişiklik gelince Cloudflare Pages'e çıkar.
+# Gizliler (bir kez, PowerShell): gh secret set CLOUDFLARE_API_TOKEN ; gh secret set CLOUDFLARE_ACCOUNT_ID
+# Proje adı 'islemyok' değilse: gh variable set CF_PAGES_PROJECT --body <ad>
+name: yayin
+on:
+  push:
+    branches: [main]
+    paths: ["site/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: yayin
+jobs:
+  yayin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=${{ vars.CF_PAGES_PROJECT || 'islemyok' }} --branch=main --commit-dirty=true

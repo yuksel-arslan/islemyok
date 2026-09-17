@@ -5,7 +5,7 @@ taşıyan worker.
 
 | klasör | ne | nereye çıkar |
 |-|-|-|
-| `site/` | `index.html` — modelin ve arayüzün tek kaynağı | Cloudflare Pages (`wrangler pages deploy site`) |
+| `site/` | `index.html` — modelin ve arayüzün tek kaynağı | Cloudflare Pages — main'e merge'de otomatik (`.github/workflows/yayin.yml`); elle: `npx wrangler pages deploy site` |
 | `worker/` | günlük tarama + `@islemyok` kanalına yayın | Railway (`cd worker && railway up`) |
 
 ## Tek kaynak kuralı
