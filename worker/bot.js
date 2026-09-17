@@ -98,7 +98,7 @@ async function tgPhoto(png,caption){
   return j.result.message_id;
 }
 
-const FOOT='islemyok.com · X: x.com/islemyok · Yatırım tavsiyesi değildir.';
+const FOOT='islemyok.com · Testler: islemyok.com/strateji-testleri.html · X: x.com/islemyok · Yatırım tavsiyesi değildir.';
 
 /* ---- 1) açık sinyalleri güncelle: yalnız kapananlar duyurulur ---- */
 async function updateOpen(open,log){

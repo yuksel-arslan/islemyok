@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strateji testleri — 10 popüler strateji, 4.5 yıl, şans kontrollü: sıfırı geçti — İşlem Yok</title>
+<meta name="description" content="Trend takibi, kırılım, geri dönüş, kesitsel momentum, fonlama carry ve kendi modelimiz: 10 popüler kripto stratejisini 4.5 yıl, 10 varlık, look-ahead'siz walk-forward ve şans kontrolüyle test ettik. Hiçbiri şansı yenmedi. Sayılar, yöntem, kod.">
+<link rel="canonical" href="https://islemyok.com/backtest-neden-yaniltir.html">
+<meta property="og:title" content="10 popüler kripto stratejisi test edildi: sıfırı şansı yendi">
+<meta property="og:description" content="4.5 yıl, 10 varlık, şans kontrollü, kodu açık. Başkaları sinyal satar; biz sinyalin işe yarayıp yaramadığını gösteririz.">
+<meta property="og:url" content="https://islemyok.com/strateji-testleri.html">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article",
+"headline":"Backtest neden yanıltır?","description":"Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.",
+"inLanguage":"tr","author":{"@type":"Organization","name":"İşlem Yok"},
+"publisher":{"@type":"Organization","name":"İşlem Yok","url":"https://islemyok.com"},
+"mainEntityOfPage":"https://islemyok.com/backtest-neden-yaniltir.html"}
+</script>
+<style>
+:root{--paper:#E7E9E4;--panel:#F1F2EE;--ink:#16181A;--muted:#6B7076;--rule:#C5C9C2;
+ --a:#00787E;--b:#CE2A63;--warn:#9A6B00}
+html[data-theme="dark"]{--paper:#131618;--panel:#1A1E21;--ink:#E9EBE7;--muted:#848B91;--rule:#2A3034;
+ --a:#3BDDE2;--b:#FF5F95;--warn:#E8B33A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+ font-family:"Newsreader",Georgia,serif;font-weight:300;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px 90px}
+.mono{font-family:"DM Mono",ui-monospace,monospace;font-weight:400}
+header{padding:44px 0 24px;border-bottom:1px solid var(--rule)}
+.brand{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:19px;letter-spacing:.04em;
+ color:var(--ink);display:flex;align-items:center;text-decoration:none}
+.brand .bcur{display:inline-block;width:.42em;height:.95em;background:var(--b);margin-left:7px}
+.eyebrow{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:26px 0 14px}
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-variation-settings:"wdth" 80;
+ font-size:clamp(30px,5vw,46px);line-height:1;letter-spacing:-.03em;margin:0 0 14px}
+h1 em{font-style:normal;color:var(--b)}
+.lede{font-size:clamp(16px,1.9vw,19px);max-width:62ch;opacity:.88;margin:0}
+article{padding:8px 0}
+h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-variation-settings:"wdth" 85;
+ font-size:clamp(20px,2.6vw,26px);line-height:1.08;letter-spacing:-.02em;margin:38px 0 10px}
+p{max-width:66ch;margin:0 0 13px}
+a{color:var(--b)}
+.note{font-size:15px;color:var(--muted)}
+.formula{font-family:"DM Mono",monospace;font-size:14px;background:var(--panel);border:1px solid var(--rule);
+ border-left:3px solid var(--a);padding:14px 16px;margin:18px 0;overflow-x:auto;white-space:pre}
+.verdict{border-left:3px solid var(--b);background:var(--panel);padding:16px 18px;margin:22px 0}
+.verdict h3{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:18px;margin:0 0 8px}
+.verdict p{margin:0}
+table{width:100%;border-collapse:collapse;font-family:"DM Mono",monospace;font-size:13px;margin:18px 0}
+th{text-align:left;font-weight:400;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 8px;border-bottom:1px solid var(--rule)}
+td{padding:10px 8px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.theme{position:fixed;right:16px;top:16px;z-index:20;font-size:12px;background:var(--paper);
+ color:var(--ink);border:1px solid var(--rule);padding:8px 12px;cursor:pointer}
+footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
+.next{border:1px solid var(--rule);background:var(--panel);padding:14px 16px;margin:10px 0;display:block;text-decoration:none;color:var(--ink)}
+.next b{font-family:"Bricolage Grotesque",sans-serif;font-weight:700}
+.next span{display:block;font-size:14px;color:var(--muted);margin-top:3px}
+.disc{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-top:26px;line-height:1.8}
+@media(max-width:700px){.wrap{padding:0 15px 70px}body{font-size:16px}table{display:block;overflow-x:auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<button class="theme mono" id="theme">Karanlık</button>
+<div class="wrap">
+<header>
+  <a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a>
+  <div class="eyebrow">Kanıt · güncellendi 17 Eylül 2026 · <a href="/rehber.html" style="color:var(--muted)">rehberler</a></div>
+  <h1>10 popüler strateji.<br><em>Sıfır</em> şansı yenen.</h1>
+  <p class="lede">Başkaları "işte sinyal" der. Biz o sinyalin işe yarayıp yaramadığını test ederiz. Aynı veri, aynı komisyon, aynı şans kontrolü, karar kuralı sonucu görmeden yazılmış. Trend takibi, kırılım, geri dönüş, kesitsel momentum, fonlama carry ve kendi modelimiz: hiçbiri geçmedi.</p>
+</header>
+<article>
+
+<div class="kpi">
+  <div><div class="k">Denenen</div><div class="v">10</div><div class="hmeta mu mono" style="font-size:11px">strateji / model</div></div>
+  <div><div class="k">Şansı yenen</div><div class="v bad">0</div><div class="hmeta mu mono" style="font-size:11px">önceden yazılmış kurala göre</div></div>
+  <div><div class="k">Veri</div><div class="v">4.5 yıl</div><div class="hmeta mu mono" style="font-size:11px">2022–2026 · saatlik · 10 varlık</div></div>
+  <div><div class="k">İşlem</div><div class="v">13.000+</div><div class="hmeta mu mono" style="font-size:11px">komisyon 22bp dahil</div></div>
+</div>
+
+<h2 style="margin-top:34px">Skor tablosu</h2>
+<div class="sub">Kural: n ≥ 30 ∧ t ≥ 2.5 ∧ iki yarı da &gt; 0 ∧ p_şans ≤ 0.02 → geçti</div>
+<table>
+<thead><tr><th>Strateji</th><th>n</th><th>Toplam R</th><th>Ort. R</th><th>t</th><th>İsabet</th><th>Karar</th><th>Not</th></tr></thead>
+<tbody>
+<tr><td><b>Mevcut model (iki kapı)</b><br><span class="mu">islemyok taraması: 10 varlık × 96 kombinasyon, şans eşiği + hata payı</span></td><td>8</td><td>+0.29</td><td>+0.04</td><td>—</td><td>50%</td><td><span class="bad">kaldı</span></td><td class="mu">143 haftalık çapa. Gölge (eşiği geçip hata payında kalan 91 plan): +0.05R, t=0.41</td></tr>
+<tr><td><b>Koşullu (analog) model</b><br><span class="mu">aynı tarama, simülasyon şu anki duruma benzeyen pencerelerden</span></td><td>0</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="bad">kaldı</span></td><td class="mu">hata payı büyüdü, hiç plan üretmedi</td></tr>
+<tr><td><b>Trend takibi 20g</b><br><span class="mu">20 günlük getirinin işareti, 5 gün tutuş</span></td><td>4071</td><td>−81.1</td><td>−0.02</td><td>−1.61</td><td>44%</td><td><span class="bad">kaldı</span></td><td class="mu">şans: −105R (saf komisyon). Brüt ≈ 0</td></tr>
+<tr><td><b>Trend takibi 60g</b><br><span class="mu">60 günlük getirinin işareti</span></td><td>3674</td><td>−121.5</td><td>−0.03</td><td>−2.49</td><td>46%</td><td><span class="bad">kaldı</span></td><td class="mu">şansla aynı</td></tr>
+<tr><td><b>Kırılım 20g (Donchian)</b><br><span class="mu">20 günlük tavan → al, taban → sat</span></td><td>155</td><td>−1.9</td><td>−0.01</td><td>−0.18</td><td>45%</td><td><span class="bad">kaldı</span></td><td class="mu"></td></tr>
+<tr><td><b>Kırılım 55g (Turtle)</b><br><span class="mu">55 günlük tavan/taban</span></td><td>96</td><td>+0.6</td><td>+0.01</td><td>+0.07</td><td>43%</td><td><span class="bad">kaldı</span></td><td class="mu"></td></tr>
+<tr><td><b>Kısa vadeli geri dönüş</b><br><span class="mu">3 günlük z-skor &lt; −2 → al, &gt; +2 → sat</span></td><td>288</td><td>−35.6</td><td>−0.12</td><td>−2.52</td><td>46%</td><td><span class="bad">kaldı</span></td><td class="mu">şanstan kötü (p=0.88)</td></tr>
+<tr><td><b>Kesitsel momentum</b><br><span class="mu">30g getiri: ilk 3 al, son 3 sat</span></td><td>2368</td><td>−58.0</td><td>−0.02</td><td>−1.42</td><td>49%</td><td><span class="bad">kaldı</span></td><td class="mu"></td></tr>
+<tr><td><b>Fonlama carry (yüzdelik)</b><br><span class="mu">90g yüzdelik ≥90 → short, ≤10 → long</span></td><td>1987</td><td>−43.6</td><td>−0.02</td><td>−1.22</td><td>51%</td><td><span class="bad">kaldı</span></td><td class="mu">fonlama +10.8R alındı, fiyat −54.4R</td></tr>
+<tr><td><b>Fonlama carry (mutlak)</b><br><span class="mu">24s ort ≥ %0.03/8s → short</span></td><td>283</td><td>+4.0</td><td>+0.01</td><td>+0.29</td><td>53%</td><td><span class="bad">kaldı</span></td><td class="mu">fonlama +9.7R alındı, fiyat −5.8R</td></tr>
+</tbody></table>
+<p class="note" style="margin-top:10px">R = riske göre sonuç: −1 stop, +2 hedef gibi. İsabet %43–53 = yazı-tura. "Şans" = aynı giriş anları, rastgele yön, 50 tekrar; p_şans = rastgelenin gerçeği geçme oranı.</p>
+
+<h2>Nasıl test ettik</h2>
+<p><strong>Walk-forward, ileri bakma yok.</strong> Her hafta (model için) ya da her gün (kurallar için) yalnız o güne kadar bilinen barlarla karar verilir; plan sonra ileriye oynatılır. Gelecek hiçbir hesaba girmez.</p>
+<p><strong>Aynı makine.</strong> Her strateji aynı stop (ufuk boyunca 1σ), aynı hedef, aynı yarı-kapat/başabaş kuralı, aynı komisyon ve kayma (gidiş-dönüş 22 baz puan) ile oynatılır. Fonlama stratejilerinde tutuş boyunca gerçekten alınan/ödenen fonlama R'ye eklenir.</p>
+<p><strong>Şans kontrolü.</strong> Gerçek stratejinin plan listesi alınır, yalnız yön yazı-turayla çevrilir, aynı giriş/vade/maliyetle 50 kez oynatılır. Gerçek sonuç bu dağılımın neresinde? Buna ek olarak t-istatistiği ve dönemin iki yarısında tutarlılık aranır. Karar kuralı koda gömülüdür ve sonuç görülmeden yazılmıştır.</p>
+<p><strong>Kurcalama yok.</strong> Parametre taraması yapılmadı; her aile literatürdeki standart değerleriyle bir kez koşuldu. Geçmeyen strateji sonradan "ters çevrilip" yeniden denenmedi.</p>
+
+<h2>Bu ne anlama geliyor — ve gelmiyor</h2>
+<p><strong>Geliyor:</strong> Saatlik grafikte, 1–5 günlük işlemlerde, büyük kripto varlıklarında bu 10 yaklaşımdan komisyon sonrası kenar çıkmıyor. Bunları sinyal olarak satan kanalların çoğu, aynı veride şansla ayırt edilemeyen sonuçlar satıyor.</p>
+<p><strong>Gelmiyor:</strong> "Kripto'da kenar yoktur" demiyoruz. Haftalık-aylık ufuk, zincir üstü veri, emir defteri, likidasyon akışı test edilmedi. Test ettiğimiz şey, insanların en çok kullandığı ve en çok satın aldığı stratejilerdir.</p>
+
+<div class="verdict"><h3>Bu sitenin işi</h3>
+<p>Sinyal üretmek değil, sinyali test etmek. Model her gün tarar; eşiği geçen gün plan çizer, geçmeyen gün <strong>işlem yok</strong> der. İki aydır her gün "yok" dedi — çünkü yukarıdaki tablo bunu gerektiriyor. Yeni bir strateji öneren varsa aynı testten geçer; sonucu burada yayınlarız. Günlük tarama: <span class="mono">t.me/islemyok</span></p></div>
+
+<h2>Kendin çalıştır</h2>
+<p>Kod açık: <a href="https://github.com/yuksel-arslan/islemyok" style="color:var(--b)">github.com/yuksel-arslan/islemyok</a> → <span class="mono">worker/</span>. Aynı sonuçları üretmek için:</p>
+<pre class="mono" style="background:var(--panel);border:1px solid var(--rule);padding:14px;font-size:12.5px;overflow-x:auto">cd worker &amp;&amp; npm install &amp;&amp; npm test
+npm run strategies -- --tf 1h --pages 40 --csv strat.csv            # 6 fiyat kuralı
+npm run funding -- --fetch --pages 5
+npm run strategies -- --tf 1h --pages 40 --offline --strats fund_pct,fund_abs
+npm run backtest -- --tf 1h --pages 40 --warmup 16000 --step 168 --shadow   # modelin kendisi</pre>
+<p class="note">Bir stratejinin geçtiğini iddia eden varsa: aynı komutla, aynı kuralla, sonucu görmeden. Geçerse yayınlarız.</p>
+
+</article>
+<footer>
+  <div class="eyebrow" style="margin-top:0">Devamı</div>
+  <a class="next" href="/backtest-neden-yaniltir.html"><b>Backtest neden yanıltır?</b><span>Çoklu deneme, aşırı uyum, ileri bakma, maliyet ihmali ve şans eşiği yöntemi — yukarıdaki testin dayandığı ilkeler.</span></a><a class="next" href="/fonlama-orani-nedir.html"><b>Fonlama oranı nedir?</b><span>8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet ve neden carry bu veride yetmedi.</span></a>
+  <a class="next" href="/"><b>Aracı dene →</b><span>Varlık seç, Hesapla'ya bas. Çoğu gün cevabı: işlem yok. Günlük tarama: <span class="mono">t.me/islemyok</span></span></a>
+  <p class="disc">islemyok.com · x.com/islemyok · t.me/islemyok<br>
+  Bu sayfa eğitim amaçlıdır; yatırım tavsiyesi değildir. Kaldıraçlı ürünlerde anaparanın tamamı kaybedilebilir.</p>
+</footer>
+</div>
+<script>
+const root=document.documentElement,tb=document.getElementById('theme');
+function setTheme(t){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';}
+setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+</script>
+</body>
+</html>
