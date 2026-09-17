@@ -146,7 +146,24 @@ function sample(name,n=8){
   const miss=raw.filter(m=>like(m)&&!parseSignal(m.text,m.t)).slice(0,n);
   return {total:raw.length,signalLike:raw.filter(like).length,parsed:data.signals.length,miss};
 }
-module.exports={parseSignal,num,nums,fetchChannel,testChannel,toPlan,card,sample};
+/* keşif: tohum kanalların mesajlarındaki t.me bağlantılarını takip et (sinyal kanalları
+   birbirini reklam eder), bulunanları çek, ayrışan sinyal sayısına göre sırala */
+async function discover(seeds,o={}){
+  const seen=new Set(seeds.map(x=>x.toLowerCase())),queue=[...seeds],out=[];
+  const bad=/^(s|joinchat|addstickers|share|proxy|iv|login|c|\+)$/i;
+  const max=o.max||40,pages=o.pages||10;
+  while(queue.length&&out.length<max){
+    const ch=queue.shift();
+    let r;try{r=await fetchChannel(ch,pages);}catch(e){out.push({ch,err:e.message});continue;}
+    const ts=(r.raw||[]).map(m=>m.t).filter(isFinite);
+    out.push({ch,messages:r.messages,signals:r.signals.length,last:ts.length?Math.max(...ts):null});
+    if(o.log)o.log(`${ch}: ${r.messages} mesaj, ${r.signals.length} sinyal`);
+    for(const m of r.raw||[]){const re=/t\.me\/(?:s\/)?([A-Za-z0-9_]{5,32})/g;let x;
+      while((x=re.exec(m.text))){const n=x[1];if(bad.test(n)||seen.has(n.toLowerCase()))continue;seen.add(n.toLowerCase());queue.push(n);}}
+  }
+  return out.sort((a,b)=>(b.signals||0)-(a.signals||0));
+}
+module.exports={parseSignal,num,nums,fetchChannel,testChannel,toPlan,card,sample,discover};
 
 if(require.main===module){
   (async()=>{
@@ -168,6 +185,12 @@ if(require.main===module){
         console.log(`\n=== ${ch}: ${r.total} mesaj, sinyale benzeyen ${r.signalLike}, ayrışan ${r.parsed} ===`);
         r.miss.forEach((m,i)=>console.log(`--- [${i+1}] ${new Date(m.t).toISOString().slice(0,16)} ---\n${m.text.slice(0,600)}`));}
       catch(e){console.log(`${ch}: HATA ${e.message} (önce --fetch)`);}}
-    if(!opt('--fetch')&&!opt('--test')&&!opt('--sample'))console.log('kullanım: node kanal.js --fetch a,b [--pages 20] | --test a,b [--offline] [--csv out.csv] | --sample a,b [--n 8]');
+    if(opt('--discover')){
+      const res=await discover(list(opt('--discover')),{max:+opt('--max',40),pages:+opt('--pages',10),log:m=>process.stderr.write(m+'\n')});
+      console.log('\nkanal                          mesaj  sinyal  son mesaj');
+      for(const r of res)console.log(r.err?`${r.ch.padEnd(30)} HATA ${r.err}`:`${r.ch.padEnd(30)} ${String(r.messages).padStart(5)}  ${String(r.signals).padStart(6)}  ${r.last?new Date(r.last).toISOString().slice(0,10):'—'}`);
+      const good=res.filter(r=>r.signals>=20&&r.last>Date.now()-180*DAY).map(r=>r.ch);
+      console.log(good.length?`\ntest edilebilir (≥20 sinyal, son 6 ay aktif): ${good.join(',')}\nnpm run kanal -- --test ${good.join(',')} --csv kanal.csv`:'\nölçüte uyan kanal yok');}
+    if(!opt('--fetch')&&!opt('--test')&&!opt('--sample')&&!opt('--discover'))console.log('kullanım: node kanal.js --fetch a,b [--pages 20] | --test a,b [--offline] [--csv out.csv] | --sample a,b [--n 8] | --discover a,b [--max 40] [--pages 10]');
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }
