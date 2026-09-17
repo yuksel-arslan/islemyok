@@ -29,6 +29,11 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
 ## Dosyalar
 
 * `bot.js` — zamanlama, Telegram, PNG çizimi
+* `backtest.js` — plan oynatıcı backtest: verilen planları gerçek geçmiş barlara
+  karşı `replayPlan`+`netR` ile oynatır, toplam R / kazanma oranı / max drawdown /
+  profit factor çıkarır. Look-ahead'siz (sinyal üretmez, yalnız sonucu oynatır).
+  `npm run backtest -- <plans.json> [--tf 1h] [--funding 0.0001] [--bars bars.json]`
+  `--bars` verilirse ağ kullanmaz. Testler: `backtest.test.js`.
 * `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri
 * `engine_core.js` — **ÜRETİLMİŞ DOSYA, elle düzenleme.** Modelin `../site/index.html`
   içinden dilimlenmiş çekirdeği: buildVol, kuantil regresyonu + EVT kalibrasyonu,
