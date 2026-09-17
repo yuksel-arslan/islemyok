@@ -36,8 +36,9 @@ jobs:
             Sen islemyok.com'un haftalık pazarlama/işletme ajanısın. Repo bu koşuda checkout'lu (main).
             `plan/AJAN.md`'yi oku ve adımları sırayla uygula: `plan/PLAN.md` takvimi ve `plan/DURUM.md`
             durumuna göre sırası gelen adımın ajan kısmını yap; `worker/` araçlarıyla haftalık anonim kanal
-            kartını üret (`npm run kanal -- --discover`, `--fetch`, `--test --strict`; n<30 ise atla; ağ
-            engelliyse DURUM.md'ye açıkça yaz, uydurma); `site/strateji-testleri.html` tablosuna ve
+            kartını üret (`npm run kanal -- --discover`, `--fetch`, `--test --strict`; n<30 ise atla). Ağ
+            kontrolü ÖNCE: ilk `--discover` ya da `--fetch` 403/timeout verirse tekrar deneme, kart
+            adımını hemen atla, DURUM.md'ye tek satır yaz ("kart: ağ engeli"), uydurma; `site/strateji-testleri.html` tablosuna ve
             `plan/kartlar/`a ekle; X metnini hazırla. `cd worker && npm test` geçince değişikliği
             `claude/ajan-<yıl>-<hafta>` dalına it ve PR aç (gh pr create); DURUM.md'ye PR bağlantısını yaz.
             Yüksel'den istenen en fazla tek satır, yalnız kimlik/ödeme/hesap için. Eşik/kural/ledger'a
@@ -45,4 +46,4 @@ jobs:
             Koşuya özel not: ${{ github.event.inputs.not }}
           claude_args: >-
             --allowedTools "Bash(git *),Bash(gh *),Bash(npm *),Bash(node *),Bash(cd *),Read,Write,Edit,Glob,Grep"
-            --max-turns 80
+            --max-turns 40
