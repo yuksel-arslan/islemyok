@@ -20,6 +20,14 @@ Hüküm: {yendi/yenemedi}
 {tek cümle: neden — dolmayan giriş / silinen mesaj / hedef=giriş}
 Kendin test et: islemyok.com/sinyal-test.html
 
+## Bu haftanın kartı — 2026-38, Kanal E
+🐒 Bu hafta: Kanal E — 139 sinyal, Nis–Eyl 2026
+Kanal: %45 · +29.108 TL
+Maymun: +10.063 TL
+Hüküm: yenemedi
+Cömert sayımda %78 / +93.048 TL görünüyordu; 49 sinyalde giriş hiç dolmadı, mesajların %29'u silinmiş.
+Kendin test et: islemyok.com/sinyal-test.html
+
 ## %79 → %49 hikâyesi (thread)
 1/ Bir sinyal kanalı "%79 isabet" diyor. Doğru mu? Test ettik.
 2/ Cömert sayımda (kanalın saydığı gibi) gerçekten %79.

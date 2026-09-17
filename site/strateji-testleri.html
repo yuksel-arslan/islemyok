@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Strateji ve sinyal testleri — 10 strateji, 4 sinyal kanalı, şans kontrollü: sıfırı geçti — İşlem Yok</title>
+<title>Strateji ve sinyal testleri — 10 strateji, 5 sinyal kanalı, şans kontrollü: sıfırı geçti — İşlem Yok</title>
 <meta name="description" content="Trend takibi, kırılım, geri dönüş, kesitsel momentum, fonlama carry ve kendi modelimiz: 10 popüler kripto stratejisini 4.5 yıl, 10 varlık, look-ahead'siz walk-forward ve şans kontrolüyle test ettik. Hiçbiri şansı yenmedi. Sayılar, yöntem, kod.">
 <link rel="canonical" href="https://islemyok.com/backtest-neden-yaniltir.html">
-<meta property="og:title" content="10 strateji + 4 sinyal kanalı test edildi: sıfırı şansı yendi">
+<meta property="og:title" content="10 strateji + 5 sinyal kanalı test edildi: sıfırı şansı yendi">
 <meta property="og:description" content="4.5 yıl, 10 varlık, şans kontrollü, kodu açık. Başkaları sinyal satar; biz sinyalin işe yarayıp yaramadığını gösteririz.">
 <meta property="og:url" content="https://islemyok.com/strateji-testleri.html">
 <meta property="og:type" content="article">
@@ -98,7 +98,7 @@ td .mu{font-size:11.5px}
   <div><div class="k">Şansı yenen</div><div class="v bad">0</div><div class="hmeta mu mono" style="font-size:11px">önceden yazılmış kurala göre</div></div>
   <div><div class="k">Veri</div><div class="v">4.5 yıl</div><div class="hmeta mu mono" style="font-size:11px">2022–2026 · saatlik · 10 varlık</div></div>
   <div><div class="k">İşlem</div><div class="v">13.000+</div><div class="hmeta mu mono" style="font-size:11px">komisyon 22bp dahil</div></div>
-  <div><div class="k">Sinyal kanalı</div><div class="v bad">0 / 4</div><div class="hmeta mu mono" style="font-size:11px">maymunu yenen</div></div>
+  <div><div class="k">Sinyal kanalı</div><div class="v bad">0 / 5</div><div class="hmeta mu mono" style="font-size:11px">maymunu yenen</div></div>
 </div>
 
 <h2 style="margin-top:34px">Skor tablosu</h2>
@@ -119,9 +119,9 @@ td .mu{font-size:11.5px}
 </tbody></table>
 <p class="note" style="margin-top:10px">R = riske göre sonuç: −1 stop, +2 hedef gibi. İsabet %43–53 = yazı-tura. "Şans" = aynı giriş anları, rastgele yön, 50 tekrar; p_şans = rastgelenin gerçeği geçme oranı.</p>
 
-<h2>Sinyal kanalları: dördü de maymunu yenemedi</h2>
-<div class="sub">Telegram'da herkese açık 4 sinyal kanalı · 1.200 sinyal ayrıştırıldı · 287 test edildi · Eylül 2026</div>
-<p>Aramalarda "en iyi sinyal kanalı" diye geçen 12 kanalı taradık. <strong>8'i ölçülebilir sinyal vermiyor</strong> — "long fırsatı verebilir", haber, YouTube linki. Kalan 4'ü giriş / stop / hedef veriyor. Her sinyali gerçek Binance mumlarıyla oynattık; sonra aynı işlemleri yönü yazı-turayla belirlenmiş 50 "dart atan maymun"a oynattık. Kanal, maymunların %98'inden iyi değilse: yenemedi.</p>
+<h2>Sinyal kanalları: beşi de maymunu yenemedi</h2>
+<div class="sub">Telegram'da herkese açık 5 sinyal kanalı · 1.702 sinyal ayrıştırıldı · 426 test edildi · güncelleniyor: haftalık otomatik keşif</div>
+<p>Aramalarda "en iyi sinyal kanalı" diye geçen 12 kanalı taradık. <strong>8'i ölçülebilir sinyal vermiyor</strong> — "long fırsatı verebilir", haber, YouTube linki. Kalan 4'ü giriş / stop / hedef veriyor. Her sinyali gerçek Binance mumlarıyla oynattık; sonra aynı işlemleri yönü yazı-turayla belirlenmiş 50 "dart atan maymun"a oynattık. Kanal, maymunların %98'inden iyi değilse: yenemedi. Bundan sonra her hafta, sinyal kanallarının birbirine verdiği bağlantılar otomatik izlenerek yeni bir kanal bulunup aynı yöntemle test ediliyor ve anonim olarak tabloya ekleniyor (bu hafta: Kanal E).</p>
 <p><strong>Kanalların kendi iddiası ile sıkı hesap arasındaki fark, hikâyenin kendisi.</strong> "Cömert" sütun kanalların isabet saydığı şekildir: giriş fiyatına hiç gelmeyen sinyal de "kazandı", ilk hedefte yarı kapatılmış. "Sıkı" sütun gerçek işlem: fiyat girişe gelmediyse işlem yoktur; ya stop ya son hedef.</p>
 <table>
 <thead><tr><th>Kanal</th><th>n</th><th>İsabet<br><span class="mu">cömert → sıkı</span></th><th>100 bin TL, %1 risk<br><span class="mu">cömert → sıkı</span></th><th>Maymun</th><th>Maymunların<br>%'sinden iyi</th><th>t</th><th>Karar</th><th>Not</th></tr></thead>
@@ -130,10 +130,11 @@ td .mu{font-size:11.5px}
 <tr><td><b>Kanal B</b><br><span class="mu">Oca–May 2025</span></td><td>51</td><td>%79 → <b>%18</b></td><td>+35.246 → <b>−35.660</b></td><td>−23.022</td><td>2%</td><td>−6.09</td><td><span class="bad">yenemedi</span></td><td class="mu">35 sinyalde giriş dolmadı · <span class="bad">%26 mesaj silinmiş</span> · maymundan kötü</td></tr>
 <tr><td><b>Kanal C</b><br><span class="mu">Eki–Ara 2024</span></td><td>55</td><td>%93 → <b>%65</b></td><td>+38.516 → <b>+11.867</b></td><td>+3.102</td><td>92%</td><td>1.58</td><td><span class="bad">yenemedi</span></td><td class="mu">"%93": hedef=giriş yazılmış sinyaller · BTC al-tut +43.874</td></tr>
 <tr><td><b>Kanal D</b><br><span class="mu">Haz–Eyl 2026</span></td><td>35</td><td>%38 → <b>%34</b></td><td>−4.948 → <b>−5.821</b></td><td>+2.956</td><td>14%</td><td>−0.70</td><td><span class="bad">yenemedi</span></td><td class="mu">isabet baştan düşük · BTC al-tut +20.486</td></tr>
+<tr><td><b>Kanal E</b><br><span class="mu">Nis–Eyl 2026</span></td><td>139</td><td>%78 → <b>%45</b></td><td>+93.048 → <b>+29.108</b></td><td>+10.063</td><td>82%</td><td>1.44</td><td><span class="bad">yenemedi</span></td><td class="mu">49 sinyalde giriş hiç dolmadı · <span class="bad">%29 mesaj silinmiş</span></td></tr>
 </tbody></table>
 <p class="note" style="margin-top:10px">Kanal adları bilinçli olarak yazılmadı; amaç kanal yakalamak değil, yöntemi göstermek. Kod açık; aynı komutla herhangi bir herkese açık kanalı kendin test edebilirsin. "Mesaj silinmiş" = kanalın mesaj numaralarındaki boşluk oranı; kaybedenleri silen kanalın izi.</p>
 <div class="verdict"><h3>%79 isabet nasıl %49 olur</h3>
-<p>Üç yolla: (1) <strong>dolmayan limit emri</strong> — fiyat girişe hiç gelmez, hedefe gider, kanal "kazandı" yazar; sen o işlemde değildin. (2) <strong>ilk hedefte yarı kapatma</strong> — küçük kâr "isabet" sayılır, kalan yarı stop'a gider. (3) <strong>silinen sinyaller</strong> — Kanal A ve B'de mesajların dörtte biri yok. Bu üçü olmadan hesaplanınca dört kanaldan hiçbiri yazı-turayı yenemedi; biri (B) yazı-turadan kötü.</p></div>
+<p>Üç yolla: (1) <strong>dolmayan limit emri</strong> — fiyat girişe hiç gelmez, hedefe gider, kanal "kazandı" yazar; sen o işlemde değildin. (2) <strong>ilk hedefte yarı kapatma</strong> — küçük kâr "isabet" sayılır, kalan yarı stop'a gider. (3) <strong>silinen sinyaller</strong> — Kanal A, B ve E'de mesajların dörtte biri civarı yok. Bu üçü olmadan hesaplanınca beş kanaldan hiçbiri yazı-turayı yenemedi; biri (B) yazı-turadan kötü.</p></div>
 
 <h2>Nasıl test ettik</h2>
 <p><strong>Walk-forward, ileri bakma yok.</strong> Her hafta (model için) ya da her gün (kurallar için) yalnız o güne kadar bilinen barlarla karar verilir; plan sonra ileriye oynatılır. Gelecek hiçbir hesaba girmez.</p>
