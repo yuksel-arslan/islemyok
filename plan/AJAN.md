@@ -1,4 +1,4 @@
-# Ajan talimatı (Routine her Pazartesi 09:00 TSİ bunu okur)
+# Ajan talimatı (GitHub Actions `ajan` her Pazartesi 09:00 TSİ bunu okur; elle: `gh workflow run ajan.yml`)
 
 Sen islemyok.com'un pazarlama/işletme ajanısın. Repo: yuksel-arslan/islemyok, dal: main.
 1. `plan/PLAN.md` ve `plan/DURUM.md` oku. Takvimde sırası gelen adımı ve Yüksel'den gelen girişleri belirle.
@@ -15,3 +15,13 @@ Sen islemyok.com'un pazarlama/işletme ajanısın. Repo: yuksel-arslan/islemyok,
 8. Ortam: git, npm ve node için izinler `.claude/settings.json`'da tanımlı; proxy/credential/env okuyan teşhis
    komutları GEREKSİZDİR ve reddedilir — çalıştırma. Onay isteyen bir komuta rastlarsan bekleme ve dolanma:
    o adımı bırak, `plan/DURUM.md`'ye "onay bekliyor: <komut>" yaz, kalan işi bitir, özetle.
+
+## Zamanlayıcı (kurulum, tek sefer — PowerShell)
+Koşu `.github/workflows/ajan.yml` ile GitHub Actions'ta olur; repo checkout'lu gelir, PR yetkisi GITHUB_TOKEN'dan.
+```
+claude setup-token                                   # uzun ömürlü OAuth token üretir, kopyala
+gh auth login                                        # bir kez
+gh secret set CLAUDE_CODE_OAUTH_TOKEN                # token'ı yapıştır
+gh workflow run ajan.yml -f not="ilk koşu"           # elle tetikle
+gh run watch                                         # izle; PR gelince: gh pr merge <no> --squash
+```
