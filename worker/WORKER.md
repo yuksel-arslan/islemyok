@@ -125,6 +125,29 @@ Değişkenler Railway panel → servis → **Variables** altında. Deploy loglar
 `node_modules`'ü dışarıda tutar; Railpack Linux için `package-lock.json`'dan kurar
 (`@napi-rs/canvas` native olduğu için bu şart).
 
+## Backtest bulguları (2026-09-17, 1h, 10 varlık, 40k bar ≈ 4.5 yıl, look-ahead yok)
+
+Aynı veride üç bağımsız bakış, aynı cevap: **1h barda 1–5 günlük ufukta spot majörlerde yön
+tahmininden komisyon (22bp) sonrası kenar çıkmıyor.**
+
+| Bakış | n | Sonuç |
+|---|---|---|
+| Mevcut model (iki kapı) | 8 | +0.04R/plan, sıfırdan ayırt edilemez |
+| Gölge (şans ✓ hata ✗) | 91 | +0.05R/plan, t=0.41 → hata kapısı gerçek kenar reddetmiyor |
+| Koşullu (analog) bootstrap | 0 | komşu pencereyle nEff küçülüyor, hata kapısı hiç açılmıyor — fikir öldü |
+| tsmom20 / tsmom60 | 4071 / 3674 | −81R / −121R; şans = saf komisyon (−105 / −112). Brüt ≈ 0 |
+| donch20 / donch55 | 155 / 96 | ≈ 0 |
+| revert3 | 288 | −36R, t=−2.5, şanstan kötü (p=0.88) |
+| xsmom30 | 2368 | −58R, şans −51 |
+
+Teşhis: `evalCombo` simülasyon başlangıcını tüm geçmişten rastgele seçer; yön bilgisi yalnız geçmiş
+ortalama sürüklenme. Kapılar doğru kalibre (ev − eşik ≈ gerçekleşen). Sorun kapılarda değil, sinyal
+kaynağında. **Yapılmaması gereken:** eşik/çarpan oynamak, kombinasyon eklemek, sonucu gördükten sonra
+kural çevirmek (revert3 → "devam").
+
+**Test edilmemiş adaylar (veri gerekli):** fonlama/basis carry (futures `fapi`; sitede modül var),
+haftalık ufuk momentum (günlük bar, 1–4 hafta tutuş, komisyon amorti).
+
 ## Bilinen sınırlar (v1)
 
 * Kapanış raporu yok (v1.1: açık planlar Neon'a yazılır, her koşuda SL/TP/BE kontrol edilir).
