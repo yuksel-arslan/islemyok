@@ -5,7 +5,7 @@ window.IY={
   REF_BINANCE:"https://www.binance.com/activity/referral-entry/CPA?ref=CPA_007UPFYGH1",
   REF_OKX:"",
   REF_BYBIT:"",
-  ADSENSE_PUB:"",
+  ADSENSE_PUB:"ca-pub-1157298728187860",
   ADSENSE_SLOT_ICERIK:"",
   ADSENSE_SLOT_ARAC:""
 };
