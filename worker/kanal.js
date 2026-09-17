@@ -154,7 +154,8 @@ if(require.main===module){
     const list=v=>String(v).split(',').map(x=>x.trim().replace(/^@|^https?:\/\/t\.me\/(s\/)?/,'')).filter(Boolean);
     if(opt('--fetch'))for(const ch of list(opt('--fetch'))){
       try{const r=await fetchChannel(ch,+opt('--pages',20));
-        console.log(`${r.channel}: ${r.messages} mesaj, ${r.signals.length} sinyal ayrıştırıldı`+(r.signals.length?'':'  ← hiç sinyal ayrışmadı; bir mesaj örneği gönder, ayrıştırıcıyı uyarlayalım'));
+        const ts=(r.raw||[]).map(m=>m.t).filter(isFinite),d=t=>new Date(t).toISOString().slice(0,10);
+        console.log(`${r.channel}: ${r.messages} mesaj (${ts.length?d(Math.min(...ts))+' → '+d(Math.max(...ts)):'tarih yok'}), ${r.signals.length} sinyal ayrıştırıldı`+(r.signals.length?'':'  ← hiç sinyal ayrışmadı; bir mesaj örneği gönder, ayrıştırıcıyı uyarlayalım'));
         if(r.signals.length)console.log('   örnek:',JSON.stringify(r.signals[r.signals.length-1]));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
     if(opt('--test'))for(const ch of list(opt('--test'))){
