@@ -35,7 +35,7 @@ async function klines(sym,tf,pages){
   const file=cacheFile(sym,tf,pages);
   let have=[];
   try{have=JSON.parse(fs.readFileSync(file,'utf8'));}catch(e){}
-  const fetch1=async u=>{const r=await fetch(u);if(!r.ok)throw new Error('Binance '+r.status);return r.json();};
+  const fetch1=async u=>{const r=await fetch(u,{signal:AbortSignal.timeout(15000)});if(!r.ok)throw new Error('Binance '+r.status);return r.json();};
   if(have.length){
     /* GERİYE TAMAMLAMA: önbellek daha küçük bir bar tavanıyla doldurulmuş olabilir.
        İleri güncelleme yalnız yeni barları getirir, eskiyi asla; pages büyüdüğünde

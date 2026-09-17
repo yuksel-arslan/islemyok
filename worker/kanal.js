@@ -18,7 +18,7 @@ async function fetchChannel(name,pages=20){
   const msgs=new Map();let before=null;
   for(let g=0;g<pages;g++){
     const u=`https://t.me/s/${name}`+(before?`?before=${before}`:'');
-    const r=await fetch(u,{headers:{'user-agent':'Mozilla/5.0'}});if(!r.ok)throw new Error('t.me '+r.status);
+    const r=await fetch(u,{headers:{'user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(15000)});if(!r.ok)throw new Error('t.me '+r.status);
     const html=await r.text();
     const blocks=html.split('tgme_widget_message_wrap').slice(1);
     let minId=Infinity,added=0;
