@@ -143,13 +143,17 @@ module.exports={parseSignal,num,nums,fetchChannel,testChannel,toPlan,card};
 if(require.main===module){
   (async()=>{
     const a=process.argv.slice(2),opt=(k,d)=>{const i=a.indexOf(k);return i>=0?a[i+1]:d;};
-    if(opt('--fetch')){const r=await fetchChannel(opt('--fetch'),+opt('--pages',20));
-      console.log(`${r.channel}: ${r.messages} mesaj, ${r.signals.length} sinyal ayrıştırıldı`);
-      if(r.signals.length)console.log('örnek:',JSON.stringify(r.signals[r.signals.length-1]));
-      if(!r.signals.length)console.log('hiç sinyal ayrışmadı — mesaj formatını gönder, ayrıştırıcıyı uyarlayalım');}
-    if(opt('--test')){const r=await testChannel(opt('--test'),{offline:a.includes('--offline'),controls:+opt('--controls',50)});
-      console.log(card(r));
-      if(opt('--csv'))fs.writeFileSync(opt('--csv'),['t0,sym,side,entry,sl,tp2,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,'','',x.state,x.R].join(','))).join('\n'));}
-    if(!opt('--fetch')&&!opt('--test'))console.log('kullanım: node kanal.js --fetch <kanal> [--pages 20] | --test <kanal> [--offline] [--csv out.csv]');
+    const list=v=>String(v).split(',').map(x=>x.trim().replace(/^@|^https?:\/\/t\.me\/(s\/)?/,'')).filter(Boolean);
+    if(opt('--fetch'))for(const ch of list(opt('--fetch'))){
+      try{const r=await fetchChannel(ch,+opt('--pages',20));
+        console.log(`${r.channel}: ${r.messages} mesaj, ${r.signals.length} sinyal ayrıştırıldı`+(r.signals.length?'':'  ← hiç sinyal ayrışmadı; bir mesaj örneği gönder, ayrıştırıcıyı uyarlayalım'));
+        if(r.signals.length)console.log('   örnek:',JSON.stringify(r.signals[r.signals.length-1]));}
+      catch(e){console.log(`${ch}: HATA ${e.message}`);}}
+    if(opt('--test'))for(const ch of list(opt('--test'))){
+      try{const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50)});
+        console.log('\n'+card(r));
+        if(opt('--csv'))fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-'+ch+'.csv',['t0,sym,side,entry,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,x.state,x.R].join(','))).join('\n'));}
+      catch(e){console.log(`${ch}: HATA ${e.message}`);}}
+    if(!opt('--fetch')&&!opt('--test'))console.log('kullanım: node kanal.js --fetch a,b,c [--pages 20] | --test a,b,c [--offline] [--csv out.csv]');
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }
