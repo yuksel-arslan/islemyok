@@ -135,6 +135,11 @@ details.det>summary{font-family:"DM Mono",monospace;font-size:12px;letter-spacin
 details.det>summary::before{content:'+ ';color:var(--bTx)}
 details.det[open]>summary::before{content:'− '}
 details.det>summary::-webkit-details-marker{display:none}
+.navlinks{display:flex;gap:4px;margin-left:auto;margin-right:14px}
+.navlinks a{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 10px;border-bottom:2px solid transparent}
+.navlinks a:hover{color:var(--b)}.navlinks a[aria-current]{color:var(--bTx);border-bottom-color:var(--bTx)}
+.navlinks a:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+@media(max-width:640px){.navlinks a{padding:8px 6px;font-size:10px;letter-spacing:.08em}}
 .navsoc{display:flex;align-items:center;gap:10px}
 .navsoc a{color:var(--muted);display:flex;transition:color .15s}
 .navsoc a:hover{color:var(--b)}
@@ -258,7 +263,7 @@ button:not(.go):hover{border-color:var(--ink)}
 <nav class="nav" id="nav">
   <div class="navin">
     <div class="brand">İŞLEM YOK<span class="bcur"></span></div>
-    <div class="eyebrow">canlı fiyat · her şey senin tarayıcında hesaplanır</div>
+    <div class="navlinks"><a href="/sinyal-test.html">Sinyalini test et</a><a href="/strateji-testleri.html">Testler</a><a href="/rehber.html">Rehber</a></div>
     <div class="navsoc">
       <a href="https://t.me/islemyok" target="_blank" rel="noopener" title="Telegram · günlük tarama" aria-label="Telegram">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.7-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8L18.1 6c.4-.3-.1-.5-.6-.2L6.7 12.6l-4.6-1.4c-1-.3-1-1 .2-1.5L20.6 2.5c.8-.3 1.5.2 1.3 1.8z"/></svg></a>
