@@ -68,23 +68,50 @@ async function klines(sym,tf){
   return trimmed;
 }
 
-/* ---- piyasa taraması: aile-geneli şans eşiği (siteyle aynı mantık) ---- */
+/* ---- çekirdek: verilen barlardan kalibre model (ağ yok) ---- */
+function buildCore(rows,sym,disp,tf){
+  const cfg=TFC[tf],perDay=cfg.perDay;
+  if(rows.length<perDay*260)throw new Error(`yetersiz veri (${rows.length})`);
+  const CC=computeCore(rows,perDay,cfg.ms,HZ_FIXED);
+  if(!CC)throw new Error('kalibrasyon yetersiz');
+  CC.sym=sym;CC.disp=disp;CC.tf=tf;return CC;
+}
+
+/* ---- piyasa taraması: aile-geneli şans eşiği (siteyle aynı mantık) ----
+   Veriyi Binance'ten çeker, sonra scanCores. Canlı bot bunu kullanır. */
 async function scanMarket(tf,log){
   log=log||(()=>{});
-  const cfg=TFC[tf],perDay=cfg.perDay;
-  const SIDES=[1,-1],QS=[0.05,0.10,0.25],RS=[1,1.5,2,3];
   const cores=[],fails=[];
   for(const [sym,disp] of ASSETS){
     try{
       log(`${disp} verisi…`);
-      const rows=await klines(sym,tf);
-      if(rows.length<perDay*260)throw new Error(`yetersiz veri (${rows.length})`);
-      const CC=computeCore(rows,perDay,cfg.ms,HZ_FIXED);
-      if(!CC)throw new Error('kalibrasyon yetersiz');
-      CC.sym=sym;CC.disp=disp;CC.tf=tf;cores.push(CC);
+      cores.push(buildCore(await klines(sym,tf),sym,disp,tf));
     }catch(e){fails.push(`${disp}: ${e.message}`);}
   }
   if(!cores.length)throw new Error('hiçbir varlık taranamadı: '+fails.join(' | '));
+  return {...scanCores(cores,tf,log),fails};
+}
+
+/* ---- as-of tarama: barlar dışarıdan verilir, ağ kullanılmaz ----
+   rowsBySym: {sym:[bar]} — o ana kadar KESİLMİŞ barlar. Backtest (walk-forward)
+   bunu kullanır; look-ahead olmaması, çağıranın barları o anda kesmesine bağlıdır.
+   Aile eşiği verilen varlık kümesi üzerinden hesaplanır: canlıyla aynı eşik için
+   10 varlığın hepsi verilmelidir. */
+function scanRows(rowsBySym,tf,log){
+  const cores=[],fails=[];
+  for(const [sym,disp] of ASSETS){
+    const rows=rowsBySym[sym];if(!rows||!rows.length)continue;
+    try{cores.push(buildCore(rows,sym,disp,tf));}
+    catch(e){fails.push(`${disp}: ${e.message}`);}
+  }
+  if(!cores.length)return {tf,cores:0,combos:0,famHi:NaN,famMed:NaN,hits:[],tops:[],fails};
+  return {...scanCores(cores,tf,log),fails};
+}
+
+/* ---- ortak tarama gövdesi: kombinasyonlar, aile eşiği, iki kapı ---- */
+function scanCores(cores,tf,log){
+  log=log||(()=>{});
+  const SIDES=[1,-1],QS=[0.05,0.10,0.25],RS=[1,1.5,2,3];
   const HZs=cores[0].HZ,combos=[];
   for(const sd of SIDES)for(const hz of HZs)for(const q of QS)for(const rm of RS)combos.push([sd,hz,q,rm]);
   log('gerçek tarama…');
@@ -118,7 +145,7 @@ async function scanMarket(tf,log){
     tops.push({disp:cores[ci].disp,ev:t.ev,se:t.se,okChance,okErr});
     if(okChance&&okErr)hits.push({S:cores[ci],plan:t});}
   hits.sort((a,b)=>b.plan.ev-a.plan.ev);
-  return {tf,cores:cores.length,combos:combos.length,famHi,famMed,hits,fails,tops};
+  return {tf,cores:cores.length,combos:combos.length,famHi,famMed,hits,tops};
 }
 
 /* Tek karsilastirma noktasi: sans esigi gecildi mi?
@@ -139,4 +166,4 @@ function planLevels(S,plan){
     posPct:0.01/(1-Math.exp(-dStop))*100          /* risk %1 varsayımı */
   };
 }
-module.exports={scanMarket,planLevels,klines,ASSETS,TFC,passesThreshold};
+module.exports={scanMarket,scanRows,scanCores,buildCore,planLevels,klines,ASSETS,TFC,passesThreshold};

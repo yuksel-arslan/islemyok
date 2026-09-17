@@ -29,12 +29,25 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
 ## Dosyalar
 
 * `bot.js` — zamanlama, Telegram, PNG çizimi
-* `backtest.js` — plan oynatıcı backtest: verilen planları gerçek geçmiş barlara
-  karşı `replayPlan`+`netR` ile oynatır, toplam R / kazanma oranı / max drawdown /
-  profit factor çıkarır. Look-ahead'siz (sinyal üretmez, yalnız sonucu oynatır).
-  `npm run backtest -- <plans.json> [--tf 1h] [--funding 0.0001] [--bars bars.json]`
-  `--bars` verilirse ağ kullanmaz. Testler: `backtest.test.js`.
-* `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri
+* `trackrecord.js` — **gerçek track record**: Neon `signals` (salt okunur) veya kamuya
+  açık `signals.json` üzerinden yayınlanmış sinyallerin gerçekleşen sonucu (toplam R,
+  kazanma, profit factor, max drawdown). Kayıtlar yayın anında yazıldığı için look-ahead
+  yoktur — "sistem çalışıyor mu" sorusunun en güçlü cevabı. `--bars-dir` ile her kapanmış
+  sinyal botla aynı kodla (`replayPlan`+`netR`) yeniden hesaplanıp kayıtla karşılaştırılır;
+  uyuşmazlıkta çıkış kodu 3. Ledger'a yazmaz. Testler: `trackrecord.test.js`.
+  `npm run trackrecord -- signals.json | --url <url> | --db  [--bars-dir CACHE_DIR]`
+* `backtest.js` — **walk-forward backtest**: modeli geçmişte gezdirir. Her çapa anında
+  yalnız o ana kadarki barlarla `engine.scanRows` çalışır (canlı taramayla aynı kod, aynı
+  eşikler), iki kapıyı geçen plan o anki fiyattan açılır, sonra T sonrası barlara karşı
+  oynatılır. Look-ahead yok. Açık sym+yön varken tekrar açmaz, ters yön gelirse kapatır
+  (canlı `publishNew` ile aynı). Çapa başına maliyet ≈ bir canlı tarama; `--step`/`--from`/
+  `--to` ile sınırla. `--assets` alt küme verirsen aile eşiği canlıdan farklı çıkar (uyarır).
+  `npm run backtest -- [--tf 1h] [--step 24] [--warmup N] [--from 2025-01-01] [--to …]
+     [--assets BTC,ETH] [--funding x] [--offline] [--csv out.csv] [--json out.json]`
+  `--offline`: yalnız `CACHE_DIR/kl-<sym>-<tf>.json` okur, ağa çıkmaz. Testler: `backtest.test.js`.
+* `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri.
+  `scanMarket` (canlı, Binance) ve `scanRows` (as-of, barlar verilir, ağ yok) ortak
+  `scanCores` gövdesini paylaşır; `buildCore` barlardan kalibrasyon.
 * `engine_core.js` — **ÜRETİLMİŞ DOSYA, elle düzenleme.** Modelin `../site/index.html`
   içinden dilimlenmiş çekirdeği: buildVol, kuantil regresyonu + EVT kalibrasyonu,
   computeCore, evalCombo.

@@ -23,6 +23,19 @@ test('best eşikten büyükken sonuç asla "geçmedi" olmaz (belirti regresyonu)
   assert.strictEqual(passesThreshold(best, thr), true);
 });
 
+test('scanRows: yetersiz veri fırlatmaz; cores:0, hits boş, fails dolu (ağsız)', ()=>{
+  const {scanRows}=require('./engine');
+  const r=scanRows({BTCUSDT:[{t:1,o:1,h:1,l:1,c:1}]},'1d');
+  assert.strictEqual(r.cores,0); assert.deepStrictEqual(r.hits,[]);
+  assert.ok(r.fails.some(f=>/BTC/.test(f)));
+});
+
+test('scanMarket ve scanRows aynı ortak gövdeyi (scanCores) dışa aktarır', ()=>{
+  const e=require('./engine');
+  for(const k of ['scanMarket','scanRows','scanCores','buildCore','planLevels'])
+    assert.strictEqual(typeof e[k],'function',k);
+});
+
 test('geçersiz sayılar (NaN/Infinity) geçmez', ()=>{
   assert.strictEqual(passesThreshold(NaN, 0.30), false);
   assert.strictEqual(passesThreshold(0.50, NaN), false);
