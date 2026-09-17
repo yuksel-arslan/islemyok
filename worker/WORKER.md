@@ -1,6 +1,6 @@
 # İşlem Yok — Telegram Worker
 
-Güncelleme: 2026-09-08 · Durum: v1 (günlük tarama + yayın). v1.1 planı: işlem kapanış takibi (Neon).
+Güncelleme: 2026-09-17 · Durum: v1 (günlük tarama + yayın). v1.1 planı: işlem kapanış takibi (Neon).
 
 Kaynak: <https://github.com/yuksel-arslan/islemyok> — bu klasör repo içinde `worker/`.
 
@@ -11,9 +11,14 @@ sunucu kopyası): 10 varlık × 96 kombinasyon + aile-geneli şans eşiği (12 t
 
 * Bir plan **iki kapıdan** geçmek zorundadır: (1) aile-geneli şans eşiği (ev > famHi),
   (2) kendi hata payı (ev > 2·se). Yalnız ikisini birden geçen yayınlanır.
+* Eşik karşılaştırması tek yerde: `passesThreshold(best, thr)` (`engine.js`). Hem
+  `okChance` hesabı hem "işlem yok" kararı bunu kullanır; ekrandaki `best`/eşik ile
+  metnin çelişmemesi bu tekliğe bağlıdır. Birim testi: `engine.test.js` (`npm test`).
 * Geçilmezse: kanala "Bugün işlem yok" metni — en iyi sonuç ± hata payı, eşik değeri ve
-  **hangi kapıda elendiği**. (Eşiği geçip hata payında kalan varsa metin bunu söyler;
-  yoksa mesaj, eşikten büyük bir sayının yanında "eşik geçilmedi" yazarak çelişir.)
+  **hangi kapıda elendiği**. Eşiği geçip hata payında kalan varsa metin bunu söyler;
+  best iki kapıyı da geçtiği halde plan zaten açık olduğu için yeni sinyal çıkmadıysa
+  metin "eşik geçildi ama açık plan mevcut" der — eşikten büyük bir sayının yanında asla
+  "eşik geçilmedi" yazmaz.
 * Geçilirse: her plan için mum grafiği PNG (giriş/SL/TP1/TP2/süre) + özet.
 
 Tahmin ufku sitedekiyle aynı sabit settir: **15/30/60/120 interval** (`HZ_FIXED`), üst

@@ -114,12 +114,17 @@ async function scanMarket(tf,log){
   for(let ci=0;ci<cores.length;ci++){
     const t=perAsset[ci][0];
     if(!t){tops.push({disp:cores[ci].disp,ev:NaN,se:NaN,okChance:false,okErr:false});continue;}
-    const okChance=t.ev>famHi, okErr=t.ev>2*t.se;
+    const okChance=passesThreshold(t.ev,famHi), okErr=t.ev>2*t.se;
     tops.push({disp:cores[ci].disp,ev:t.ev,se:t.se,okChance,okErr});
     if(okChance&&okErr)hits.push({S:cores[ci],plan:t});}
   hits.sort((a,b)=>b.plan.ev-a.plan.ev);
   return {tf,cores:cores.length,combos:combos.length,famHi,famMed,hits,fails,tops};
 }
+
+/* Tek karsilastirma noktasi: sans esigi gecildi mi?
+   Yon: best > thr (best, esikten KESIN buyuk olmali). Karar ve mesaj ayni
+   fonksiyonu kullanir ki ekrandaki sayi ile metin birbiriyle celismesin. */
+function passesThreshold(best,thr){return isFinite(best)&&isFinite(thr)&&best>thr;}
 
 /* plan seviyeleri (mesaj/grafik için) */
 function planLevels(S,plan){
@@ -134,4 +139,4 @@ function planLevels(S,plan){
     posPct:0.01/(1-Math.exp(-dStop))*100          /* risk %1 varsayımı */
   };
 }
-module.exports={scanMarket,planLevels,klines,ASSETS,TFC};
+module.exports={scanMarket,planLevels,klines,ASSETS,TFC,passesThreshold};
