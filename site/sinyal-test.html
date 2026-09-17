@@ -64,8 +64,13 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 @media(max-width:700px){.wrap{padding:0 15px 70px}body{font-size:16px}table{display:block;overflow-x:auto}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.kpi div{background:var(--panel);padding:13px 15px}
+.kpi{display:flex;flex-wrap:wrap;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.kpi>div{background:var(--panel);padding:13px 15px;flex:1 1 150px;min-width:0;position:relative}
+.kpi .k{display:flex;align-items:center;gap:6px}
+.i{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border:1px solid var(--muted);border-radius:50%;font-family:"DM Mono",monospace;font-size:9.5px;color:var(--muted);cursor:help;text-transform:none;letter-spacing:0;flex:none}
+.i:hover,.i:focus-visible{border-color:var(--b);color:var(--b);outline:none}
+.tipbox{display:none;position:absolute;left:12px;right:12px;top:calc(100% - 8px);z-index:6;background:var(--paper);border:1px solid var(--rule);padding:10px 12px;font-family:"Newsreader",Georgia,serif;font-size:14px;line-height:1.45;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:300}
+.kpi>div.open .tipbox{display:block}
 .kpi .k{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .kpi .v{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums}
 .kpi .m{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--muted);margin-top:3px}
@@ -185,6 +190,11 @@ const norm=s=>{s=String(s||'').trim().toUpperCase().replace(/[\/\-\s]/g,'').repl
 const tl=(R)=>(R>=0?'+':'−')+Math.abs(R*1000).toLocaleString('tr-TR',{maximumFractionDigits:0})+' TL';
 const pc=(x,d=0)=>(x*100).toFixed(d)+'%';
 const fmt=x=>x>=1000?x.toLocaleString('tr-TR',{maximumFractionDigits:0}):x>=1?x.toFixed(2):x.toPrecision(4);
+/* kutu: başlık + ⓘ açıklama + değer + alt not */
+const box=(k,tip,v,m,cls='')=>'<div><div class="k">'+k+'<button class="i" type="button" aria-label="açıklama">i</button><div class="tipbox">'+tip+'</div></div><div class="v '+cls+'">'+v+'</div><div class="m">'+m+'</div></div>';
+document.addEventListener('click',e=>{const b=e.target.closest('.i');
+  document.querySelectorAll('.kpi>div.open').forEach(d=>{if(!b||!d.contains(b))d.classList.remove('open');});
+  if(b)b.closest('.kpi>div').classList.toggle('open');});
 
 /* ---- tek sinyal ---- */
 $('oneDemo').onclick=()=>{$('oneText').value='#BTCUSDT LONG\nEntry: 63000\nSL: 61500\nTP1: 64500 TP2: 66000';$('oneText').dispatchEvent(new Event('input'));};
@@ -207,12 +217,12 @@ $('oneGo').onclick=async()=>{
       :'Sinyalci, söylemeden %'+(be*100).toFixed(0)+' isabet iddia ediyor. Şans %'+(r.pWin*100).toFixed(0)+' verir.';
     out.innerHTML='<div class="card '+cls+'"><h3>'+head+'</h3>'+
       '<div class="kpi">'+
-      '<div><div class="k">Risk / ödül</div><div class="v">1 : '+r.rm.toFixed(2)+'</div><div class="m">stop −'+r.stopPct.toFixed(2)+'% · hedef +'+r.tgtPct.toFixed(2)+'%</div></div>'+
-      '<div><div class="k">Başabaş isabet</div><div class="v">'+pc(be)+'</div><div class="m">bunun altı zarar (komisyon dahil)</div></div>'+
-      '<div><div class="k">Şansın isabeti</div><div class="v '+(r.pWin>=be?'ok':'bad')+'">'+pc(r.pWin)+'</div><div class="m">yönsüz, son 30 gün oynaklığı</div></div>'+
-      '<div><div class="k">Şansın beklentisi</div><div class="v '+(r.evMonkey>=0?'ok':'bad')+'">'+(r.evMonkey>=0?'+':'−')+Math.abs(r.evMonkey).toFixed(2)+'R</div><div class="m">100 bin TL, %1 risk: '+tl(r.evMonkey)+' / işlem</div></div>'+
-      (r.liq?'<div><div class="k">Tasfiye</div><div class="v '+(r.liqBeforeStop?'bad':'')+'">'+fmt(r.liq)+'</div><div class="m">'+(r.liqBeforeStop?'stop\'tan ÖNCE':'stop\'tan sonra, tamam')+'</div></div>':'')+
-      '<div><div class="k">Tipik süre</div><div class="v">'+(r.medianBars<48?r.medianBars+' sa':Math.round(r.medianBars/24)+' gün')+'</div><div class="m">stop ya da hedefe kadar (medyan)</div></div>'+
+      box('Risk / ödül','Stop\'a uzaklık 1 birimse hedefe uzaklık kaç birim. 1:2 = kaybedersen 1, kazanırsan 2. Yüksek olması iyi ama tek başına anlam taşımaz; hedef uzaklaştıkça isabet düşer.','1 : '+r.rm.toFixed(2),'stop −'+r.stopPct.toFixed(2)+'% · hedef +'+r.tgtPct.toFixed(2)+'%')+
+      box('Başabaş isabet','Bu stop/hedef ile komisyon sonrası sıfıra çıkmak için gereken isabet oranı. Sinyalci bunu söylemez ama iddiası tam olarak budur: "en az bu kadar tuttururum."',pc(be),'bunun altı zarar (komisyon dahil)')+
+      box('Şansın isabeti','Hiçbir şey bilmeyen biri bu stop ve hedefle ne kadar tutturur? Varlığın son 30 günlük saatlik hareketleri, yönü rastgele çevrilerek 4.000 kez oynatıldı. Sinyalin yenmesi gereken çıta budur.',pc(r.pWin),'yönsüz, son 30 gün oynaklığı',r.pWin>=be?'ok':'bad')+
+      box('Şansın beklentisi','Aynı yönsüz simülasyonda işlem başına ortalama sonuç, R cinsinden (−1 = stop kadar kayıp). Sıfıra yakın normaldir; belirgin negatifse geometri ya da komisyon aleyhte.',(r.evMonkey>=0?'+':'−')+Math.abs(r.evMonkey).toFixed(2)+'R','100 bin TL, %1 risk: '+tl(r.evMonkey)+' / işlem',r.evMonkey>=0?'ok':'bad')+
+      (r.liq?box('Tasfiye','Girdiğin kaldıraçla pozisyonun borsa tarafından kapatılacağı fiyat (bakım marjı ihmal edildi, yaklaşık). Stop\'tan önce geliyorsa stop hiç çalışmaz; kaldıracı düşür.',fmt(r.liq),r.liqBeforeStop?'stop\'tan ÖNCE':'stop\'tan sonra, tamam',r.liqBeforeStop?'bad':''):'')+
+      box('Tipik süre','Yönsüz simülasyonda işlemin stop ya da hedefe ulaşması için geçen sürenin ortancası. Sinyalin "1 haftada hedef" gibi vaadini bununla kıyasla.',r.medianBars<48?r.medianBars+' sa':Math.round(r.medianBars/24)+' gün','stop ya da hedefe kadar (medyan)')+
       '</div>'+
       '<p style="margin-top:14px">Giriş '+fmt(r.entry)+(r.offEntry>0.03?' <span class="wn">— şimdiki fiyattan %'+(r.offEntry*100).toFixed(1)+' uzak; dolmayabilir</span>':'')+'. Bu sinyalin para kazandırması için kaynağının en az <b>'+pc(be)+'</b> isabet tutturması gerekir; hiçbir şey bilmeyen biri bu stop/hedefle <b>'+pc(r.pWin)+'</b> tutturur. Aradaki <b>'+(gap>0?(gap*100).toFixed(0)+' puan':'fark yok')+'</b>'+(gap>0?' kanıtlanmamış bir vaat. Kanalın geçmişini "Kanalın geçmişi" sekmesine yapıştır; vaat mi gerçek mi ölçelim.':'.')+'</p></div>';
     st.textContent='';
@@ -263,9 +273,11 @@ $('manyGo').onclick=async()=>{
       '<circle cx="'+x(r.totalR)+'" cy="19" r="7" fill="var(--b)"/></svg></div><div class="bandlab"><span>'+tl(lo)+'</span><span>gri bant: 50 maymunun %90\'ı · kesik çizgi: maymun ortalaması · nokta: '+name+'</span><span>'+tl(hi)+'</span></div>';
     out.innerHTML='<div class="card '+cls+'"><h3>🐒 '+name+' — '+r.verdict.toLowerCase()+(strict?'':' <span class="wn" style="font-size:14px">(cömert kural, doğrulanmadı)</span>')+'</h3>'+
       '<p class="note">'+r.n+' sinyal test edildi ('+msgs.length+' mesaj, '+sigs.length+' sinyal ayrıştı; atlanan: veri yok '+skip.veriYok+', giriş uzak '+skip.girisUzak+(strict?', giriş dolmadı '+skip.dolmadi:'')+', nadir coin '+skip.nadir+')</p>'+
-      '<div class="kpi"><div><div class="k">'+name+'</div><div class="v '+(r.totalR>=0?'ok':'bad')+'">'+tl(r.totalR)+'</div><div class="m">isabet '+pc(r.winRate)+' · çekilme '+r.maxDrawdown.toFixed(1)+'R</div></div>'+
-      '<div><div class="k">Dart atan maymun</div><div class="v">'+tl(r.monkeyMean)+'</div><div class="m">%90\'ı '+tl(r.monkeyLo)+' … '+tl(r.monkeyHi)+'</div></div>'+
-      '<div><div class="k">Maymunların %\'sinden iyi</div><div class="v '+(r.p<=0.02?'ok':'')+'">'+((1-r.p)*100).toFixed(0)+'%</div><div class="m">t = '+r.t.toFixed(2)+' · kural: ≥98% ∧ t≥2.5 ∧ n≥30</div></div></div>'+band+
+      '<div class="kpi">'+
+      box(name,'Kanalın sinyalleri gerçek Binance mumlarıyla oynatıldı: her sinyalde önce stop mu hedef mi geldi. 100 bin TL ve işlem başına %1 risk varsayımıyla toplam sonuç. Komisyon ve kayma düşüldü.',tl(r.totalR),'isabet '+pc(r.winRate)+' · çekilme '+r.maxDrawdown.toFixed(1)+'R',r.totalR>=0?'ok':'bad')+
+      box('Dart atan maymun','Aynı sinyaller, aynı giriş anı, aynı stop ve hedef — yalnız yön yazı-turayla. 50 kez. "Kanal hiçbir şey bilmeseydi ne yapardı" sorusunun cevabı; bant, 50 maymunun %90\'ının düştüğü aralık.',tl(r.monkeyMean),'%90\'ı '+tl(r.monkeyLo)+' … '+tl(r.monkeyHi))+
+      box('Maymunların %\'sinden iyi','Kanalın sonucu 50 maymunun kaçını geçti. %98 ve üstü, t≥2.5 ve en az 30 sinyal → "yendi". t, sonucun gürültüden ne kadar ayrıştığını ölçer; küçük örneklemde büyük kâr bile düşük t verir.',((1-r.p)*100).toFixed(0)+'%','t = '+r.t.toFixed(2)+' · kural: ≥98% ∧ t≥2.5 ∧ n≥30',r.p<=0.02?'ok':'')+
+      '</div>'+band+
       '<p style="margin-top:12px" class="note">100 bin TL, işlem başına %1 risk varsayımı. Sıkı kural: fiyat girişe gelmediyse işlem yok, ilk hedefte yarı kapatma yok. Kanalın sildiği sinyaller burada görünmez.</p>'+
       '<details style="margin-top:8px"><summary class="ex">sinyal listesi</summary><table class="sig"><thead><tr><th>tarih</th><th>varlık</th><th>yön</th><th>sonuç</th><th>R</th></tr></thead><tbody>'+
       r.rows.map(x=>'<tr><td>'+new Date(x.t0).toISOString().slice(0,10)+'</td><td>'+x.sym.replace('USDT','')+'</td><td>'+(x.side>0?'L':'S')+'</td><td>'+x.state+'</td><td>'+(x.R>=0?'+':'−')+Math.abs(x.R).toFixed(2)+'</td></tr>').join('')+'</tbody></table></details></div>';
