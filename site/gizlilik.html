@@ -3,24 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Backtest neden yanıltır? — İşlem Yok</title>
-<meta name="description" content="Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.">
-<link rel="canonical" href="https://islemyok.com/backtest-neden-yaniltir.html">
-<meta property="og:title" content="Backtest neden yanıltır?">
-<meta property="og:description" content="Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.">
-<meta property="og:url" content="https://islemyok.com/backtest-neden-yaniltir.html">
+<title>Gizlilik ve çerezler — İşlem Yok</title>
+<meta name="description" content="islemyok.com hangi veriyi toplar, hangisini toplamaz: sunucu tarafı kayıt yok, tarayıcıda hesaplama, tema tercihi, Google AdSense çerezleri, referans bağlantıları, iletişim.">
+<link rel="canonical" href="https://islemyok.com/gizlilik.html">
+<meta property="og:title" content="Gizlilik ve çerezler">
+<meta property="og:description" content="Ne toplanır, ne toplanmaz.">
+<meta property="og:url" content="https://islemyok.com/gizlilik.html">
 <meta property="og:type" content="article">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Article",
-"headline":"Backtest neden yanıltır?","description":"Geçmiş veride kârlı görünen stratejilerin çoğu neden gerçekte çalışmaz: çoklu deneme, aşırı uyum, ileri bakma hatası, maliyet ihmali ve şans eşiği yöntemi.",
-"inLanguage":"tr","author":{"@type":"Organization","name":"İşlem Yok"},
-"publisher":{"@type":"Organization","name":"İşlem Yok","url":"https://islemyok.com"},
-"mainEntityOfPage":"https://islemyok.com/backtest-neden-yaniltir.html"}
-</script>
 <style>
 :root{--paper:#E7E9E4;--panel:#F1F2EE;--ink:#16181A;--muted:#6B7076;--rule:#C5C9C2;
  --a:#00787E;--b:#CE2A63;--warn:#9A6B00}
@@ -77,44 +70,39 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 <div class="wrap">
 <header>
   <div class="navrow"><a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a><nav class="navlinks" aria-label="Site"><a href="/sinyal-test.html">Sinyalini test et</a><a href="/strateji-testleri.html">Testler</a><a href="/rehber.html">Rehber</a></nav></div>
-  <div class="eyebrow">Rehber · 7 dk okuma · <a href="/rehber.html" style="color:var(--muted)">tüm rehberler</a></div>
-  <h1>Backtest <em>neden</em> yanıltır?</h1>
-  <p class="lede">Geçmişte kârlı görünen bir strateji bulmak başarı değildir; yeterince denersen garantidir. Asıl soru şu: bulduğun şey sinyal mi, yoksa şansın en iyi günü mü?</p>
+  <div class="eyebrow">Gizlilik · güncelleme 2026-09-18</div>
+  <h1>Gizlilik ve <em>çerezler</em></h1>
+  <p class="lede">Kısa sürüm: hesap yok, form yok, sunucuda kişisel veri yok. Aşağıda uzun sürüm.</p>
 </header>
 <article>
-
-<h2>1. Çoklu deneme: kazananı sonradan seçmek</h2>
-<p>1.000 kişiye yazı-tura attır; ~31 kişi üst üste 5 tura getirir. Onlara "yetenekli" demezsin. Ama 1.000 parametre kombinasyonu deneyip en iyisini gösteren backtest tam olarak bunu yapar: kazananı <em>sonradan</em> seçer. Denenen kombinasyon sayısı arttıkça, en iyisinin salt şansla ulaşabileceği skor da yükselir — ve kimse denediği 999 başarısızlığı raporlamaz.</p>
-<h2>2. Aşırı uyum: geçmişi ezberlemek</h2>
-<p>Parametreleri geçmiş veriye ince ayar çektikçe strateji genelleme yapmayı bırakır, o dönemin tesadüflerini ezberler. Belirti tipiktir: geçmişte pürüzsüz kazanç eğrisi, canlıda ilk aydan dağılma. Parametre sayısı arttıkça bu tuzak derinleşir.</p>
-<h2>3. İleri bakma ve hayatta kalan yanlılığı</h2>
-<p>Kapanmamış mumun kapanışını kullanmak, o gün henüz açıklanmamış veriyi "bilmek", listeden silinmiş coinleri test evreninden düşürmek... Her biri geçmişe, gerçekte sahip olamayacağın bir bilgi sızdırır. Sonuç iyi görünür; çünkü hile — istemeden de olsa — yapılmıştır.</p>
-<h2>4. Maliyet ihmali</h2>
-<p>Komisyon, alış-satış farkı, kayma ve <a href="/fonlama-orani-nedir.html">fonlama</a>: işlem başına küçük görünen bu kalemler, sık işlem yapan stratejilerde kâğıt üstündeki kârın tamamını yiyebilir. Maliyetsiz backtest, sürtünmesiz fizik problemi gibidir — zarif ve gerçek dışı.</p>
-<h2>Peki ne işe yarar? Şans eşiği</h2>
-<p>Backtest çöp değildir; çıtası yanlış konur. Doğru çıta "sonuç pozitif mi?" değil, "sonuç, şansın aynı imkânlarla üretebileceğinin <em>en iyisini</em> geçiyor mu?"dur. Yöntem: aynı veri ve aynı kombinasyon uzayında, bilgisiz (karıştırılmış) girişlerle binlerce sahte tarama koş; bunların en iyilerinin dağılımı sana şansın tavanını verir. Gerçek sonucun bu tavanın altındaysa, elindeki büyük ihtimalle gürültüdür.</p>
-<div class="verdict"><h3>Bu sitenin varlık sebebi</h3>
-<p>islemyok.com her taramada tam olarak bunu yapar: 10 varlık × 96 kombinasyonun en iyisini, aynı ailede şansın ürettiği en iyiyle kıyaslar. Eşik geçilmezse cevap dürüsttür: <strong>işlem yok.</strong> Pozitif sayı bulmak kolay; şansı yenmek zordur. Günlük sonuçlar: <span class="mono">t.me/islemyok</span></p></div>
-
+<h2>Ne toplamıyoruz</h2>
+<p>islemyok.com'da üyelik, giriş, e-posta formu veya sunucu tarafı analitik yoktur. Araca girdiğin varlık, zaman aralığı, sinyal metni ve tüm hesaplar tarayıcında yapılır; bize gönderilmez ve saklanmaz.</p>
+<h2>Tarayıcında saklanan tek şey</h2>
+<p>Tema tercihin (karanlık/aydınlık) tarayıcının <span class="mono">localStorage</span> alanında tutulur. Bu veri yalnız senin cihazında kalır; silmek için tarayıcı site verilerini temizlemen yeterli.</p>
+<h2>Üçüncü taraflara giden istekler</h2>
+<p><strong>Binance veri API'si.</strong> Fiyat mumları tarayıcından doğrudan Binance'in herkese açık uç noktalarından çekilir. Binance bu isteklerde IP adresini görür; kendi <a href="https://www.binance.com/en/privacy" rel="noopener" target="_blank">gizlilik politikası</a> geçerlidir.</p>
+<p><strong>Google Fonts.</strong> Yazı tipleri Google'ın sunucularından yüklenir; Google IP adresini görür.</p>
+<p><strong>Google AdSense.</strong> Sitede reklam gösterilir. Google ve reklam ortakları, önceki ziyaretlerine göre reklam sunmak için çerez kullanabilir. Kişiselleştirilmiş reklamı <a href="https://adssettings.google.com" rel="noopener" target="_blank">Google reklam ayarlarından</a> kapatabilirsin. Google'ın veriyi nasıl kullandığı: <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">policies.google.com</a>. Reklam ağı olarak kripto sinyal veya kripto eğitim reklamlarını engelledik; yine de sızanı görürsen bize bildir.</p>
+<h2>Referans bağlantıları</h2>
+<p>Bazı sayfalarda borsa referans bağlantısı vardır ve öyle olduğu yanında yazar. Bu bağlantıdan hesap açarsan sana ek maliyet olmaz; bize komisyon payı gelir. Bu bağlantılar hükümleri, eşikleri veya test sonuçlarını etkilemez; kanal adları ve sinyal grupları için para almayız.</p>
+<h2>Telegram ve X</h2>
+<p>Günlük tarama <span class="mono">t.me/islemyok</span> kanalında yayınlanır. Kanala katılman Telegram'ın kurallarına tabidir; biz üye listesini görmeyiz. Sinyal testinde taranan Telegram kanalları herkese açık önizlemelerden okunur; sitede anonim tutulur.</p>
+<h2>İletişim</h2>
+<p>Soru, düzeltme veya silme talebi: <span class="mono">contact@yukselarslan.com</span>. Sunucuda kişisel veri tutmadığımız için silinecek bir kayıt genellikle yoktur; olursa yazarız.</p>
+<div class="verdict"><h3>Özet</h3><p>Sunucuda hiçbir şey saklamıyoruz. Reklam için Google'ın çerezleri var, referans bağlantıları açıkça işaretli. Bu sayfa değişirse üstteki tarih değişir.</p></div>
 </article>
-<div data-reklam="icerik"></div>
 <footer>
-  <div class="eyebrow" style="margin-top:0">Devamı</div>
-  <a class="next" href="/stop-loss-nereye-konur.html"><b>Stop loss nereye konur?</b><span>Stop'u psikolojik seviyeye değil, fiyatın normal gürültüsünün dışına koymak: oynaklık tabanlı stop mesafesi, sayısal örnek ve yaygın hatalar.</span></a><a class="next" href="/kaldirac-kac-olmali.html"><b>Kaldıraç kaç olmalı?</b><span>Kaldıraç riskin kendisi değil, boyutun çarpanıdır. Risk yüzdesinden kaldıraç türetme formülü, tasfiye kontrolü ve sayısal örnek.</span></a>
-  <a class="next" href="/"><b>Aracı dene →</b><span>Varlık seç, Hesapla'ya bas. Çoğu gün cevabı: işlem yok. Günlük tarama: <span class="mono">t.me/islemyok</span></span></a>
+  <a class="next" href="/"><b>Aracı dene →</b><span>Varlık seç, Hesapla'ya bas. Çoğu gün cevabı: işlem yok.</span></a>
   <p class="disc">islemyok.com · x.com/islemyok · t.me/islemyok · <a href="/gizlilik.html" style="color:var(--muted)">gizlilik</a><br>
-  Bu sayfa eğitim amaçlıdır; yatırım tavsiyesi değildir. Kaldıraçlı ürünlerde anaparanın tamamı kaybedilebilir.</p>
+  Bu site eğitim amaçlıdır; yatırım tavsiyesi değildir.</p>
 </footer>
 </div>
 <script>
 const root=document.documentElement,tb=document.getElementById('theme');
-/* tema: ana sayfayla aynı anahtar (localStorage 'theme'); varsayılan koyu; seçim tüm sayfalarda kalıcı */
 function setTheme(t,save){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';
   if(save)try{localStorage.setItem('theme',t)}catch(e){}}
 setTheme((()=>{try{return localStorage.getItem('theme')||'dark'}catch(e){return 'dark'}})());
 tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark',true);
 </script>
-<script src="/yapilandirma.js"></script>
-<script src="/gelir.js"></script>
 </body>
 </html>

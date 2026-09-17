@@ -35,3 +35,9 @@ test('render: boş yapılandırma repo içindeki site/yapilandirma.js ile birebi
   assert.deepEqual(validate(cfg),[]);
   assert.equal(disk,render(cfg),'site/yapilandirma.js DURUM.md ile uyumsuz: npm run yapilandir');
 });
+
+test('renderAdsTxt: ADSENSE_PUB doluysa google satırı, boşsa boş', ()=>{
+  const {renderAdsTxt}=require('./yapilandir');
+  assert.strictEqual(renderAdsTxt({ADSENSE_PUB:'ca-pub-1234567890123456'}),'google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n');
+  assert.strictEqual(renderAdsTxt({ADSENSE_PUB:''}),'');
+});

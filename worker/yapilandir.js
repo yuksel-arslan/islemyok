@@ -35,7 +35,12 @@ function render(cfg){
     KEYS.map((k,i)=>'  '+k+':'+q(cfg[k])+(i<KEYS.length-1?',':'')).join('\n'),
     '};',''].join('\n');
 }
-module.exports={parse,validate,render,KEYS};
+/* ads.txt içeriği: "google.com, pub-<id>, DIRECT, f08c47fec0942fa0"; ADSENSE_PUB boşsa '' */
+function renderAdsTxt(cfg){
+  const m=/^ca-(pub-\d{10,})$/.exec(cfg.ADSENSE_PUB||'');
+  return m?`google.com, ${m[1]}, DIRECT, f08c47fec0942fa0\n`:'';
+}
+module.exports={parse,validate,render,renderAdsTxt,KEYS};
 
 if(require.main===module){
   const a=process.argv.slice(2);
@@ -50,4 +55,8 @@ if(require.main===module){
   const eski=fs.existsSync(hedef)?fs.readFileSync(hedef,'utf8'):'';
   if(eski===js){console.log(hedef+' zaten güncel');}
   else{fs.writeFileSync(hedef,js);console.log(hedef+' yazıldı');}
+  /* ads.txt: AdSense yetkili satıcı beyanı; ADSENSE_PUB boşsa dosya silinir */
+  const adsTxt=path.join(__dirname,'..','site','ads.txt'),adsIcerik=renderAdsTxt(cfg);
+  if(adsIcerik){if(!fs.existsSync(adsTxt)||fs.readFileSync(adsTxt,'utf8')!==adsIcerik){fs.writeFileSync(adsTxt,adsIcerik);console.log(adsTxt+' yazıldı');}}
+  else if(fs.existsSync(adsTxt)){fs.unlinkSync(adsTxt);console.log(adsTxt+' silindi (ADSENSE_PUB boş)');}
 }
