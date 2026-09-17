@@ -90,8 +90,9 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   aynı işlemleri yönü rastgele 50 kez oynatır (maymun), BTC al-tut ile kıyaslar, silinmiş mesaj payını
   (id boşlukları) yazar. **`--strict` = gerçek işlem:** giriş dolmalı, yarı kapatma yok — yayınlanan hüküm
   daima sıkı moddan; cömert mod "doğrulanmadı" etiketi taşır. En çok sinyal alan 25 coin (`--maxsyms`),
-  veri derinliği sinyal tarihine göre. Eylül 2026: 4 kanal, sıkı modda 4/4 yenemedi
-  (cömertte 3 "yendi" görünüyordu: dolmayan limit girişi, TP1 yarı kapatma, %26–29 silinmiş mesaj).
+  veri derinliği sinyal tarihine göre. Eylül 2026: 5 kanal, sıkı modda 5/5 yenemedi
+  (cömertte 4 "yendi" görünüyordu: dolmayan limit girişi, TP1 yarı kapatma, %26–29 silinmiş mesaj). Haftalık
+  otomatik keşifle (`--discover`) bir kanal daha eklenir; kartlar `plan/kartlar/`, tablo `strateji-testleri.html`.
   Sitede anonim (Kanal A–D). Testler: `kanal.test.js`. Yalnız kamuya açık mesajlar; giriş yapılmaz.
   `npm run kanal -- --discover a,b | --fetch a,b --pages 40 | --test a,b --strict --offline | --sample a --n 5`
 * `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
