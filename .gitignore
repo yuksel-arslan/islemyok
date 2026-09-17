@@ -16,3 +16,6 @@ worker/.wrangler/
 .env
 .env.*
 .dev.vars
+
+!/plan/
+!/plan/**
