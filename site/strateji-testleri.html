@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -168,9 +168,11 @@ npm run backtest -- --tf 1h --pages 40 --warmup 16000 --step 168 --shadow   # mo
 </div>
 <script>
 const root=document.documentElement,tb=document.getElementById('theme');
-function setTheme(t){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';}
-setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+/* tema: ana sayfayla aynı anahtar (localStorage 'theme'); varsayılan koyu; seçim tüm sayfalarda kalıcı */
+function setTheme(t,save){root.dataset.theme=t;tb.textContent=t==='dark'?'Aydınlık':'Karanlık';
+  if(save)try{localStorage.setItem('theme',t)}catch(e){}}
+setTheme((()=>{try{return localStorage.getItem('theme')||'dark'}catch(e){return 'dark'}})());
+tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark',true);
 </script>
 </body>
 </html>
