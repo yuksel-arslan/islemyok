@@ -11,7 +11,7 @@ Aşağıdaki iki satırı doldur, commit'le (ya da buraya yaz, ajan alır):
 - `ADSENSE_PUB=` (ca-pub-… kimliği) — AdSense onayı gelince
 
 ## Yapıldı
-- 2026-09-17: plan, takvim, materyaller, Routine (Pazartesi 09:00 TSİ).
+- 2026-09-17: plan, takvim, materyaller. Zamanlayıcı: GitHub Actions `.github/workflows/ajan.yml` (Pazartesi 09:00 TSİ); tek gizli `CLAUDE_CODE_OAUTH_TOKEN`.
 
 ## Gelecek hafta
 - Adım 1–2'yi canlıya al (linkler geldiyse), ilk haftalık kanal kartı.
