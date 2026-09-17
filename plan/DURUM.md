@@ -3,11 +3,11 @@
 Son güncelleme: 2026-09-17 (ilk GitHub Actions koşusu · ajan turu 2026-38)
 
 ## Açık adım
-**1 + 2 (referans linki + reklam yerleşimi)** — ajan tarafı yayında (değerler boş → görünmez); Yüksel'in girişi bekleniyor.
+**1 + 2 (referans linki + reklam yerleşimi)** — Binance referansı yayında (2026-09-18). OKX/Bybit ve AdSense kimliği bekleniyor.
 
 ## Yüksel'den istenen (tek satır)
 Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd worker && npm run yapilandir` → `site/yapilandirma.js`):
-- `REF_BINANCE=` · `REF_OKX=` · `REF_BYBIT=` — hangileri varsa (https, borsanın kendi alan adı)
+- `REF_BINANCE=https://www.binance.com/activity/referral-entry/CPA?ref=CPA_007UPFYGH1` · `REF_OKX=` · `REF_BYBIT=` — hangileri varsa (https, borsanın kendi alan adı)
 - `ADSENSE_PUB=` (ca-pub-… kimliği) · `ADSENSE_SLOT_ICERIK=` · `ADSENSE_SLOT_ARAC=` — birim kimlikleri; boşsa yalnız Auto ads
 - Repo ayarı: Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests" aç (ajan PR açamıyor, bkz. aşağıda) — ya da `claude/ajan-2026-38` PR'ını elle aç.
 
