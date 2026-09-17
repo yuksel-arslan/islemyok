@@ -101,7 +101,8 @@ function walkForward(o){
     for(const s in rowsBySym)sliced[s]=rowsBySym[s].filter(b=>b.t<=T);
     const t1=Date.now();
     const cand=generate(T,sliced)||[];
-    const sc={t:T,cand:cand.length,ms:Date.now()-t1,famHi:cand._scan?cand._scan.famHi:undefined};
+    const nReal=cand.filter(p=>!p.shadow).length, nShadow=cand.length-nReal;
+    const sc={t:T,cand:nReal,shadowCand:nShadow,ms:Date.now()-t1,famHi:cand._scan?cand._scan.famHi:undefined};
     /* teşhis: en iyi sonuç ve hangi kapıda kaldığı (canlı noTradeMessage ile aynı mantık) */
     const tops=(cand._scan&&cand._scan.tops||[]).filter(t=>isFinite(t.ev));
     if(tops.length){
@@ -121,7 +122,7 @@ function walkForward(o){
     const p2=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
     const why=sc.best?` · en iyi ${sc.best.disp} ${p2(sc.best.ev)}R±${(2*sc.best.se).toFixed(2)} [şans ${sc.best.okChance?'✓':'✗'} hata ${sc.best.okErr?'✓':'✗'}]`+
                       (sc.nearMiss.length?` · yakın kaçan: ${sc.nearMiss.join(',')}`:''):'';
-    log(`[${k+1}/${anchors.length}] ${new Date(T).toISOString().slice(0,10)} → ${cand.length} plan`+
+    log(`[${k+1}/${anchors.length}] ${new Date(T).toISOString().slice(0,10)} → ${nReal} plan${nShadow?` + ${nShadow} gölge`:''}`+
         (isFinite(sc.famHi)?` (eşik +${sc.famHi.toFixed(2)}R)`:'')+why+` · ${sc.ms}ms`);
   });
   const res=backtest(plans,rowsBySym,{funding});
@@ -181,9 +182,9 @@ function toCsv(res){
 }
 
 function scansCsv(res){
-  const h='t,famHi,best,best_ev,best_se,okChance,okErr,gap,nearMiss,plans,ms';
+  const h='t,famHi,best,best_ev,best_se,okChance,okErr,gap,nearMiss,plans,shadow_plans,ms';
   return [h,...(res.scans||[]).map(s=>[new Date(s.t).toISOString(),s.famHi,s.best?s.best.disp:'',s.best?s.best.ev:'',s.best?s.best.se:'',
-    s.best?s.best.okChance:'',s.best?s.best.okErr:'',s.gap==null?'':s.gap,(s.nearMiss||[]).join('|'),s.cand,s.ms].join(','))].join('\n');
+    s.best?s.best.okChance:'',s.best?s.best.okErr:'',s.gap==null?'':s.gap,(s.nearMiss||[]).join('|'),s.cand,s.shadowCand||0,s.ms].join(','))].join('\n');
 }
 
 module.exports={backtest,aggregate,runOne,walkForward,modelGenerate,formatReport,toCsv,scansCsv,TFMS};

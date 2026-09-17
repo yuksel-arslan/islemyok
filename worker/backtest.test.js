@@ -167,8 +167,11 @@ test('modelGenerate --shadow: nearMisses gölge plan olur, hits olmaz; shadow ka
 test('walk-forward: gölge planlar ayrı defterde, gerçek metrikleri etkilemez, rapor ve CSV ayrı gösterir', ()=>{
   const bars=series(20).map(b=>b.t>6000?bar(b.t,112,99,110):b);        // T=6000 sonrası TP2
   const gen=(T)=>T===6000?[P({sym:'A',t0:T,t_end:T+5000}),{...P({sym:'A',t0:T,t_end:T+5000}),shadow:true}]:[];
-  const res=walkForward({rowsBySym:{A:bars},tf:'1h',step:5,warmup:5,generate:gen});
+  const logs=[];
+  const res=walkForward({rowsBySym:{A:bars},tf:'1h',step:5,warmup:5,generate:gen,log:m=>logs.push(m)});
   assert.strictEqual(res.rows.length,1); assert.strictEqual(res.n,1);            // gerçek: 1
+  assert.ok(logs.some(m=>/→ 1 plan \+ 1 gölge/.test(m)),'log gerçek ve gölgeyi ayırmalı');
+  assert.strictEqual(res.scans[0].cand,1); assert.strictEqual(res.scans[0].shadowCand,1);
   assert.ok(res.shadow); assert.strictEqual(res.shadow.rows.length,1); near(res.shadow.totalR,1-COST);
   const rep=formatReport(res);
   assert.match(rep,/GÖLGE — yakın kaçanlar .* 1 plan, 1 kapandı/);
