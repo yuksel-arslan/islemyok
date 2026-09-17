@@ -9,3 +9,8 @@ Yüksel'den: AdSense hesabı + site onayı (1–2 hafta), ca-pub kimliği DURUM.
 Her sayfada `<div data-reklam="icerik">` (footer üstü), `index.html`'de ek `<div data-reklam="arac">` (araç altı).
 `site/gelir.js`: `ADSENSE_PUB` doluysa adsbygoogle script'ini yükler; `ADSENSE_SLOT_<AD>` doluysa o alana responsive
 `<ins>` çizer, boşsa yalnız Auto ads. Kimlik boşken alan 0 yükseklik, yer tutucu yok. Değerler `npm run yapilandir` ile.
+
+## AdSense onay hazırlığı (2026-09-18)
+`site/gizlilik.html` (çerez/AdSense/referans açıklaması, her sayfanın footer'ında link), `npm run yapilandir` ADSENSE_PUB
+doluyken `site/ads.txt` üretir (boşsa siler). Hesap mevcut (footballai.io ile aynı); islemyok.com "Sites → Add site" ile
+eklenir, ca-pub kimliği hesap geneli (Account → Settings → Account information → Publisher ID).
