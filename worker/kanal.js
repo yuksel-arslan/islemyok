@@ -72,7 +72,7 @@ async function fetchChannel(name,pages=20){
     before=minId;await new Promise(r=>setTimeout(r,400));}
   const all=[...msgs.values()].sort((a,b)=>a.t-b.t);
   const sigs=all.map(m=>parseSignal(m.text,m.t)).filter(Boolean);
-  const out={channel:name,fetchedAt:Date.now(),messages:all.length,signals:sigs};
+  const out={channel:name,fetchedAt:Date.now(),messages:all.length,signals:sigs,raw:all};
   fs.writeFileSync(path.join(CACHE,`kanal-${name}.json`),JSON.stringify(out));
   return out;
 }
@@ -138,7 +138,15 @@ function card(r){
 `islemyok.com/strateji-testleri.html`].join('\n');
 }
 
-module.exports={parseSignal,num,nums,fetchChannel,testChannel,toPlan,card};
+/* sinyale benzeyen (yön kelimesi + ≥3 sayı) ama ayrışmayan son N mesaj — ayrıştırıcıyı uyarlamak için */
+function sample(name,n=8){
+  const data=JSON.parse(fs.readFileSync(path.join(CACHE,`kanal-${name}.json`),'utf8'));
+  const raw=(data.raw||[]).slice().reverse();
+  const like=m=>/long|short|\bal\b|\bsat\b|buy|sell|giri|entry|stop|hedef|tp|🟢|🔴|📈|📉/i.test(m.text)&&nums(m.text).length>=3;
+  const miss=raw.filter(m=>like(m)&&!parseSignal(m.text,m.t)).slice(0,n);
+  return {total:raw.length,signalLike:raw.filter(like).length,parsed:data.signals.length,miss};
+}
+module.exports={parseSignal,num,nums,fetchChannel,testChannel,toPlan,card,sample};
 
 if(require.main===module){
   (async()=>{
@@ -154,6 +162,11 @@ if(require.main===module){
         console.log('\n'+card(r));
         if(opt('--csv'))fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-'+ch+'.csv',['t0,sym,side,entry,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,x.state,x.R].join(','))).join('\n'));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
-    if(!opt('--fetch')&&!opt('--test'))console.log('kullanım: node kanal.js --fetch a,b,c [--pages 20] | --test a,b,c [--offline] [--csv out.csv]');
+    if(opt('--sample'))for(const ch of list(opt('--sample'))){
+      try{const r=sample(ch,+opt('--n',8));
+        console.log(`\n=== ${ch}: ${r.total} mesaj, sinyale benzeyen ${r.signalLike}, ayrışan ${r.parsed} ===`);
+        r.miss.forEach((m,i)=>console.log(`--- [${i+1}] ${new Date(m.t).toISOString().slice(0,16)} ---\n${m.text.slice(0,600)}`));}
+      catch(e){console.log(`${ch}: HATA ${e.message} (önce --fetch)`);}}
+    if(!opt('--fetch')&&!opt('--test')&&!opt('--sample'))console.log('kullanım: node kanal.js --fetch a,b [--pages 20] | --test a,b [--offline] [--csv out.csv] | --sample a,b [--n 8]');
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }
