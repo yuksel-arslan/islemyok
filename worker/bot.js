@@ -8,7 +8,7 @@
    DRY_RUN=1: Telegram'a göndermez, konsola/diske yazar.
    RUN_ON_START=1: açılışta bir kez koşar. */
 'use strict';
-const {scanMarket,planLevels,klines}=require('./engine');
+const {scanMarket,planLevels,klines,passesThreshold}=require('./engine');
 const {replayPlan,netR,progress}=require('./replay');
 const DB=require('./db');
 const {exportSignals}=require('./publish');
@@ -191,8 +191,14 @@ async function noTradeMessage(R,still,streak,log){
      "yakin kacan"dir; bunu yazmazsak ekranda esikten buyuk bir sayinin yaninda
      "esik gecilmedi" gorunur ve mesaj kendi kendisiyle celisir. */
   const nearMiss=R.tops.filter(t=>t.okChance&&!t.okErr);
+  /* "eşik geçilmedi" kararı, ekranda gösterilen best ile aynı karşılaştırmadan
+     (passesThreshold) türer. Best eşiği geçtiği halde (ör. plan zaten açık olduğu
+     için yeni sinyal çıkmadıysa) "eşik geçilmedi" yazıp kendimizle çelişmeyiz. */
+  const bestGecti=best&&passesThreshold(best.ev,R.famHi);
   const karar=nearMiss.length
     ? `${nearMiss.map(t=>t.disp).join(', ')} şans eşiğini <b>geçti</b> ama ikinci kapıda kaldı: sonuç kendi hata payının içinde, sıfırdan ayırt edilemiyor → işlem önerisi yok.`
+    : bestGecti
+    ? `${best.disp} şans eşiğini <b>geçti</b> ama açık plan zaten mevcut → yeni işlem önerisi yok.`
     : `Eşik geçilmedi → işlem önerisi yok. Pozitif sayı bulmak kolay; şansı yenmek zor.`;
 
   let acik='';
