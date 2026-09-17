@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fonlama oranı nedir? — İşlem Yok</title>
-<meta name="description" content="Perpetual vadeli işlemlerde fonlama oranının mekanizması, 8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet örneği ve pozisyon taşıma maliyeti.">
-<link rel="canonical" href="https://islemyok.com/fonlama-orani-nedir.html">
-<meta property="og:title" content="Fonlama oranı nedir?">
-<meta property="og:description" content="Perpetual vadeli işlemlerde fonlama oranının mekanizması, 8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet örneği ve pozisyon taşıma maliyeti.">
-<meta property="og:url" content="https://islemyok.com/fonlama-orani-nedir.html">
+<title>Nerede işlem açmalı? — İşlem Yok</title>
+<meta name="description" content="Cevabımız genelde: hiçbir yerde. Yine de açacaksan düşük komisyon, yüksek likidite, spot öncelikli. Üç borsanın temel komisyon kademeleri ve referans bağlantıları.">
+<link rel="canonical" href="https://islemyok.com/referans.html">
+<meta property="og:title" content="Nerede işlem açmalı?">
+<meta property="og:description" content="Cevabımız genelde: hiçbir yerde. Yine de açacaksan düşük komisyon, yüksek likidite, spot öncelikli. Üç borsanın temel komisyon kademeleri ve referans bağlantıları.">
+<meta property="og:url" content="https://islemyok.com/referans.html">
 <meta property="og:type" content="article">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,10 +16,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Article",
-"headline":"Fonlama oranı nedir?","description":"Perpetual vadeli işlemlerde fonlama oranının mekanizması, 8 saatlik ödeme döngüsü, yıllıklandırılmış maliyet örneği ve pozisyon taşıma maliyeti.",
+"headline":"Nerede işlem açmalı?","description":"Cevabımız genelde: hiçbir yerde. Yine de açacaksan düşük komisyon, yüksek likidite, spot öncelikli. Üç borsanın temel komisyon kademeleri ve referans bağlantıları.",
 "inLanguage":"tr","author":{"@type":"Organization","name":"İşlem Yok"},
 "publisher":{"@type":"Organization","name":"İşlem Yok","url":"https://islemyok.com"},
-"mainEntityOfPage":"https://islemyok.com/fonlama-orani-nedir.html"}
+"mainEntityOfPage":"https://islemyok.com/referans.html"}
 </script>
 <style>
 :root{--paper:#E7E9E4;--panel:#F1F2EE;--ink:#16181A;--muted:#6B7076;--rule:#C5C9C2;
@@ -71,39 +71,51 @@ footer{border-top:1px solid var(--rule);margin-top:44px;padding-top:22px}
 .navlinks a:focus-visible{outline:2px solid var(--a);outline-offset:2px}
 @media(max-width:640px){.navlinks{margin-left:0}.navlinks a{padding:8px 6px;font-size:10px;letter-spacing:.08em}}
 </style>
+<style>
+.ex-name{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:15px}
+.ex-link{margin-top:6px}.ex-link a{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border:1px solid var(--b);padding:5px 9px;display:inline-block;white-space:nowrap}
+.ex-link a:hover{background:var(--b);color:var(--paper)}
+.ex-link:empty{display:none}
+</style>
 </head>
 <body>
 <button class="theme mono" id="theme">Karanlık</button>
 <div class="wrap">
 <header>
   <div class="navrow"><a class="brand" href="/">İŞLEM YOK<span class="bcur"></span></a><nav class="navlinks" aria-label="Site"><a href="/sinyal-test.html">Sinyalini test et</a><a href="/strateji-testleri.html">Testler</a><a href="/rehber.html">Rehber</a></nav></div>
-  <div class="eyebrow">Rehber · 5 dk okuma · <a href="/rehber.html" style="color:var(--muted)">tüm rehberler</a></div>
-  <h1>Fonlama oranı <em>nedir?</em></h1>
-  <p class="lede">Perpetual sözleşmenin vadesi yoktur; fiyatı spota bağlayan yay fonlamadır. O yay senin lehine de çalışır, cebinden de yer — ve çoğu kişi hangisi olduğunu pozisyon açtıktan sonra öğrenir.</p>
+  <div class="eyebrow">Referans · sana ek maliyet yok</div>
+  <h1>Nerede<br><em>işlem açmalı?</em></h1>
+  <p class="lede">Cevabımız genelde "hiçbir yerde". Açacaksan: düşük komisyon, yüksek likidite, spot öncelikli. Aşağıdakiler referans bağlantısıdır; sana ek maliyet yok, bize komisyon payı gelir. Bu sayfa hiçbir hükmü değiştirmez.</p>
 </header>
 <article>
 
-<h2>Mekanizma: iki tarafın birbirine ödediği kira</h2>
-<p>Perpetual fiyatı spotun üstünde işlem görüyorsa (talep long tarafta yoğun), fonlama pozitiftir: <strong>longlar shortlara öder</strong>. Altındaysa negatiftir: shortlar longlara öder. Ödeme borsaya değil, karşı taraftaki pozisyon sahiplerine gider ve tipik olarak 8 saatte bir, pozisyon büyüklüğü üzerinden tahsil edilir.</p>
-<div class="formula">ödeme = pozisyon_büyüklüğü × fonlama_oranı      (8 saatte bir)
-yıllık_maliyet ≈ oran × 3 × 365</div>
-<h2>Sayısal örnek</h2>
-<p>10.000 USDT'lik long taşıyorsun, fonlama %0,01 (yaygın "nötr" seviye): 8 saatte 1 USDT, günde 3 USDT ödersin — yıllıklandırılmış ~%11. Piyasa coştuğunda oran %0,1'e çıkabilir: aynı pozisyon için günde 30 USDT, yıllık ~%110. Teminatın 1.000 USDT ise (10x), <em>sadece fonlama</em> teminatını günde %3 eritir — fiyat hiç kımıldamasa bile.</p>
-<h2>Planlar için üç sonuç</h2>
-<p><strong>1. Taşıma süresi maliyettir:</strong> birkaç saatlik işlemde fonlama önemsizdir; günler süren pozisyonda hedefin bir kısmını peşinen fonlamaya kiralarsın. Beklenen tutma süresi × fonlama, plana girmeden hesaplanır.</p>
-<p><strong>2. Kalabalığın faturası:</strong> aşırı pozitif fonlama, long tarafın kalabalık olduğunun ölçülebilir kanıtıdır. Kalabalık tarafta olmak hem kira ödetir hem de ani boşalmalarda (long squeeze) seni kalabalıkla birlikte kapıya koşturur.</p>
-<p><strong>3. Fonlama teminattan yenir:</strong> uzun taşınan kaldıraçlı pozisyonda fonlama, <a href="/tasfiye-fiyati-nasil-hesaplanir.html">tasfiye çizgisini</a> sessizce sana yaklaştırır. "Fiyat aleyhime gitmedi ama tasfiye oldum" hikâyelerinin bir kısmı budur.</p>
-<div class="verdict"><h3>Özet</h3>
-<p>Fonlama küçük bir dipnot gibi görünür; bileşik etkisi strateji öldürür. Bu sitedeki planlarda tahmini tutma süresi bu yüzden açıkça yazar — maliyeti hesaplanamayan sürenin planı olmaz.</p></div>
+<h2>Neden komisyon?</h2>
+<p>Sinyal kanallarını test ederken gördüğümüz şey basit: kanalın "kârı", komisyon ve kayma düşülünce çoğu zaman sıfıra iner. Sık işlem açan biri için komisyon, yön tahmininden daha kesin bir maliyettir. İşlem başına %0,1 alıp %0,1 satmak, ayda 40 işlemde sermayenin %8'idir. Bu yüzden ilk soru "hangi coin" değil, "kaça açıyorum".</p>
+
+<h2>Üç borsa, temel kademe</h2>
+<p class="note">Oranlar borsaların yayınladığı en düşük (VIP 0 / normal kullanıcı) kademe, maker / taker. Kampanya ve token indirimleri hariç. Borsa değiştirebilir; açmadan önce kendi ücret sayfasından doğrula. Son kontrol: <span class="mono">—</span> (bu ortamdan doğrulanamadı; bağlantı eklenirken kontrol edilecek).</p>
+<table>
+<thead><tr><th>Borsa</th><th>Spot</th><th>Vadeli (perp)</th><th>Not</th></tr></thead>
+<tbody>
+<tr><td><div class="ex-name">Binance</div><div class="ex-link" data-ref="REF_BINANCE"></div></td><td>%0,10 / %0,10</td><td>%0,02 / %0,05</td><td class="mu">en yüksek likidite; araç ve testlerimiz bu fiyatı kullanır</td></tr>
+<tr><td><div class="ex-name">OKX</div><div class="ex-link" data-ref="REF_OKX"></div></td><td>%0,08 / %0,10</td><td>%0,02 / %0,05</td><td class="mu">spot maker daha düşük</td></tr>
+<tr><td><div class="ex-name">Bybit</div><div class="ex-link" data-ref="REF_BYBIT"></div></td><td>%0,10 / %0,10</td><td>%0,02 / %0,055</td><td class="mu">türev odaklı</td></tr>
+</tbody></table>
+<p class="note" id="refNote">Referans bağlantıları henüz aktif değil; bu tablo yalnız bilgi amaçlıdır.</p>
+
+<h2>Neyi asla yapma</h2>
+<p><strong>Kaldıraçla başlama.</strong> Spot'ta yanlış yön %5 kaybettirir; 20x'te aynı hareket tasfiyedir. <a href="/kaldirac-kac-olmali.html">Kaldıraç kaç olmalı?</a> ve <a href="/tasfiye-fiyati-nasil-hesaplanir.html">tasfiye fiyatı</a> rehberleri, sayılarla.</p>
+<p><strong>Sinyalle açma.</strong> Test ettiğimiz kanallardan hiçbiri dart atan maymunu yenemedi: <a href="/strateji-testleri.html">testler</a>. Elinde bir sinyal varsa önce <a href="/sinyal-test.html">yapıştır</a>.</p>
+<div class="verdict"><h3>Kısa cevap</h3>
+<p>Açmak zorunda değilsin. Açacaksan spot, düşük komisyon, işlem başına %1 risk. Borsa seçimi getiriyi değil maliyeti belirler; maliyet ise kesindir.</p></div>
 
 </article>
 <div data-reklam="icerik"></div>
 <footer>
   <div class="eyebrow" style="margin-top:0">Devamı</div>
-  <a class="next" href="/tasfiye-fiyati-nasil-hesaplanir.html"><b>Tasfiye fiyatı nasıl hesaplanır?</b><span>Kaldıraçlı pozisyonda tasfiye fiyatının formülü, bakım marjının etkisi ve sayısal örnek. Tasfiye neden stop'tan önce gelmemeli?</span></a><a class="next" href="/kaldirac-kac-olmali.html"><b>Kaldıraç kaç olmalı?</b><span>Kaldıraç riskin kendisi değil, boyutun çarpanıdır. Risk yüzdesinden kaldıraç türetme formülü, tasfiye kontrolü ve sayısal örnek.</span></a>
-  <a class="next" href="/"><b>Aracı dene →</b><span>Varlık seç, Hesapla'ya bas. Çoğu gün cevabı: işlem yok. Günlük tarama: <span class="mono">t.me/islemyok</span></span></a>
+  <a class="next" href="/kaldirac-kac-olmali.html"><b>Kaldıraç kaç olmalı?</b><span>Kaldıraç riskin kendisi değil, boyutun çarpanıdır. Risk yüzdesinden kaldıraç türetme formülü, tasfiye kontrolü ve sayısal örnek.</span></a><a class="next" href="/tasfiye-fiyati-nasil-hesaplanir.html"><b>Tasfiye fiyatı nasıl hesaplanır?</b><span>Kaldıraçlı pozisyonda tasfiye fiyatının formülü, bakım marjının etkisi ve sayısal örnek.</span></a>
   <p class="disc">islemyok.com · x.com/islemyok · t.me/islemyok<br>
-  Bu sayfa eğitim amaçlıdır; yatırım tavsiyesi değildir. Kaldıraçlı ürünlerde anaparanın tamamı kaybedilebilir.</p>
+  Bu sayfa eğitim amaçlıdır; yatırım tavsiyesi değildir. Kaldıraçlı ürünlerde anaparanın tamamı kaybedilebilir. Referans bağlantıları gelir getirir; hükümleri etkilemez.</p>
 </footer>
 </div>
 <script>
@@ -116,5 +128,13 @@ tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark',true);
 </script>
 <script src="/yapilandirma.js"></script>
 <script src="/gelir.js"></script>
+<script>
+/* tablo bağlantıları: yalnız dolu olanlar; hepsi boşsa not kalır */
+(function(){const C=window.IY||{};let n=0;
+  document.querySelectorAll('[data-ref]').forEach(td=>{const u=C[td.dataset.ref];if(!/^https:\/\//.test(u||''))return;n++;
+    td.innerHTML='<a href="'+u+'" rel="sponsored noopener" target="_blank">Hesap aç →</a>';});
+  if(n)document.getElementById('refNote').textContent='Bağlantılar referans kodludur; sana ek maliyet yok, bize komisyon payı gelir.';
+})();
+</script>
 </body>
 </html>

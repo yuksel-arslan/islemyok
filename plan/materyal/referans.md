@@ -11,3 +11,9 @@ Alt: "Kaldıraç kaç olmalı?" ve "Tasfiye fiyatı" rehberlerine bağlantı.
 
 ## Yüksel'den
 Affiliate hesabı: binance.com/en/activity/referral · okx.com/join · bybit.com/affiliate. Linkleri DURUM.md'ye.
+
+## Uygulama (ajan, 2026-09-17)
+Satır `site/gelir.js` içinde (`IYGelir.refHTML()`); tek sinyal kartına eklenir, `site/referans.html` tablosu `[data-ref]`
+hücreleriyle dolar. Linkler `site/yapilandirma.js`'den okunur; o dosya `DURUM.md` → `npm run yapilandir` ile üretilir
+(alan adı borsanınki değilse reddeder). Boş link = satır yok. `rel="sponsored"`. Komisyon oranları tabloya yazıldı,
+bu ortamdan doğrulanamadı — link eklenirken borsa sayfasıyla karşılaştır, sayfadaki "Son kontrol" tarihini doldur.

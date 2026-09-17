@@ -155,6 +155,7 @@ table.sig{font-size:12px}table.sig td{padding:7px 8px}
 <p class="note">Tek bir sinyalin önceden doğru olduğu kanıtlanamaz; kimse kanıtlayamaz. Ölçebildiğimiz, çıtanın nerede olduğu ve kaynağın geçmişte o çıtayı aşıp aşmadığı. Kanalın sildiği sinyaller burada görünmez; bu kanalın lehine bir hatadır, yine de yenemiyorsa hüküm daha güçlüdür. Kod açık: <span class="mono">github.com/yuksel-arslan/islemyok</span>. Yatırım tavsiyesi değildir.</p>
 
 </article>
+<div data-reklam="icerik"></div>
 <footer>
   <div class="eyebrow" style="margin-top:0">Devamı</div>
   <a class="next" href="/strateji-testleri.html"><b>10 strateji, 4 kanal: sıfırı maymunu yendi</b><span>Aynı yöntemle test ettiklerimiz. %79 isabetin %49'a nasıl düştüğü.</span></a><a class="next" href="/backtest-neden-yaniltir.html"><b>Backtest neden yanıltır?</b><span>Çoklu deneme, aşırı uyum, ileri bakma, maliyet ihmali ve şans eşiği.</span></a>
@@ -224,7 +225,8 @@ $('oneGo').onclick=async()=>{
       (r.liq?box('Tasfiye','Girdiğin kaldıraçla pozisyonun borsa tarafından kapatılacağı fiyat (bakım marjı ihmal edildi, yaklaşık). Stop\'tan önce geliyorsa stop hiç çalışmaz; kaldıracı düşür.',fmt(r.liq),r.liqBeforeStop?'stop\'tan ÖNCE':'stop\'tan sonra, tamam',r.liqBeforeStop?'bad':''):'')+
       box('Tipik süre','Yönsüz simülasyonda işlemin stop ya da hedefe ulaşması için geçen sürenin ortancası. Sinyalin "1 haftada hedef" gibi vaadini bununla kıyasla.',r.medianBars<48?r.medianBars+' sa':Math.round(r.medianBars/24)+' gün','stop ya da hedefe kadar (medyan)')+
       '</div>'+
-      '<p style="margin-top:14px">Giriş '+fmt(r.entry)+(r.offEntry>0.03?' <span class="wn">— şimdiki fiyattan %'+(r.offEntry*100).toFixed(1)+' uzak; dolmayabilir</span>':'')+'. Bu sinyalin para kazandırması için kaynağının en az <b>'+pc(be)+'</b> isabet tutturması gerekir; hiçbir şey bilmeyen biri bu stop/hedefle <b>'+pc(r.pWin)+'</b> tutturur. Aradaki <b>'+(gap>0?(gap*100).toFixed(0)+' puan':'fark yok')+'</b>'+(gap>0?' kanıtlanmamış bir vaat. Kanalın geçmişini "Kanalın geçmişi" sekmesine yapıştır; vaat mi gerçek mi ölçelim.':'.')+'</p></div>';
+      '<p style="margin-top:14px">Giriş '+fmt(r.entry)+(r.offEntry>0.03?' <span class="wn">— şimdiki fiyattan %'+(r.offEntry*100).toFixed(1)+' uzak; dolmayabilir</span>':'')+'. Bu sinyalin para kazandırması için kaynağının en az <b>'+pc(be)+'</b> isabet tutturması gerekir; hiçbir şey bilmeyen biri bu stop/hedefle <b>'+pc(r.pWin)+'</b> tutturur. Aradaki <b>'+(gap>0?(gap*100).toFixed(0)+' puan':'fark yok')+'</b>'+(gap>0?' kanıtlanmamış bir vaat. Kanalın geçmişini "Kanalın geçmişi" sekmesine yapıştır; vaat mi gerçek mi ölçelim.':'.')+'</p>'+
+      (window.IYGelir?window.IYGelir.refHTML():'')+'</div>';   /* referans satırı: /gelir.js, linkler boşsa boş dize */
     st.textContent='';
   }catch(e){st.textContent=e.message;}finally{$('oneGo').disabled=false;}
 };
@@ -285,5 +287,7 @@ $('manyGo').onclick=async()=>{
   }catch(e){st.textContent=e.message;}finally{$('manyGo').disabled=false;}
 };
 </script>
+<script src="/yapilandirma.js"></script>
+<script src="/gelir.js"></script>
 </body>
 </html>

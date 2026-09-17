@@ -76,6 +76,13 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   Testler: `sinyal-core.test.js`. **Site:** `sinyal-test.html` — "Tek sinyal" (yapıştır/doldur → çıta) ve
   "Kanalın geçmişi" (tarihli mesajlar → sıkı/cömert oynatma, 50 maymun, bant grafiği). Her şey tarayıcıda;
   Binance verisi kullanıcının tarayıcısından çekilir, bize hiçbir şey gelmez.
+* `yapilandir.js` — **gelir yapılandırması** (site adım 1–2: borsa referans linkleri + AdSense). `../plan/DURUM.md`
+  içindeki `REF_BINANCE= REF_OKX= REF_BYBIT= ADSENSE_PUB= ADSENSE_SLOT_ICERIK= ADSENSE_SLOT_ARAC=` satırlarını okur,
+  doğrular (https + borsanın alan adı, `ca-pub-\d{10,}`, slot yalnız rakam; geçersizse yazmaz, çıkış 2) ve
+  `../site/yapilandirma.js` üretir (ÜRETİLMİŞ DOSYA, elle düzenleme). Boş değer = sayfada görünmez.
+  `../site/gelir.js` bu dosyayı okuyup referans satırını (`[data-referans]`, `IYGelir.refHTML()`) ve reklam birimlerini
+  (`[data-reklam]`) çizer. Testler: `yapilandir.test.js` (repo'daki üretilmiş dosyanın DURUM.md ile birebir olduğunu da
+  denetler). `npm run yapilandir [-- --check]`
 * `kanal.js` — **Telegram sinyal kanalı testi ("maymun testi")**. `--discover` tohum kanallardaki
   t.me bağlantılarını gezer, sinyal sayısına göre sıralar; `--fetch` herkese açık önizlemeyi (t.me/s) çeker,
   toleranslı ayrıştırıcı (TR/EN, emoji yön, bölge girişi, numaralı hedefler; hedef girişin doğru tarafında ve
