@@ -57,16 +57,18 @@ function backtest(plans,barsBySym,opts={}){
 
 /* ---- model tabanlı üretici: T'ye kadar kesilmiş barlarla tarama → planlar ----
    Canlı publishNew ile aynı alanlar (entry=P0, sl, tp1, tp2, rm, d_stop, t_end). */
-function modelGenerate(eng,tf){
+function modelGenerate(eng,tf,opts={}){
   const ms=TFMS[tf];
+  const toPlan=(h,T,famHi,shadow)=>{
+    const lv=eng.planLevels(h.S,h.plan);
+    return {sym:h.S.sym,disp:h.S.disp,side:lv.side,entry:lv.P0,sl:lv.sl,tp1:lv.tp1,tp2:lv.tp2,
+            rm:lv.Rm,d_stop:h.plan.dStop,ev:lv.ev,se:lv.se,famHi,hz:lv.hz,
+            t0:T,t_end:T+lv.hz*ms,shadow:!!shadow};};
   return (T,sliced)=>{
     const R=eng.scanRows(sliced,tf);
-    const out=R.hits.map(h=>{
-      const lv=eng.planLevels(h.S,h.plan);
-      return {sym:h.S.sym,disp:h.S.disp,side:lv.side,entry:lv.P0,sl:lv.sl,tp1:lv.tp1,tp2:lv.tp2,
-              rm:lv.Rm,d_stop:h.plan.dStop,ev:lv.ev,se:lv.se,famHi:R.famHi,hz:lv.hz,
-              t0:T,t_end:T+lv.hz*ms};
-    });
+    const out=R.hits.map(h=>toPlan(h,T,R.famHi,false));
+    /* gölge: şans ✓ hata ✗ olanlar — canlıda YAYINLANMAZ, yalnız ölçüm için */
+    if(opts.shadow)for(const h of (R.nearMisses||[]))out.push(toPlan(h,T,R.famHi,true));
     out._scan={famHi:R.famHi,cores:R.cores,fails:R.fails||[],tops:R.tops||[]};
     return out;
   };
@@ -92,6 +94,7 @@ function walkForward(o){
   if(o.from&&anchors.length&&anchors[0]>o.from)
     log(`not: --from ${new Date(o.from).toISOString().slice(0,10)} ama ilk çapa ${new Date(anchors[0]).toISOString().slice(0,10)} (warmup=${warmup} bar; daha erken için --warmup küçült)`);
   const plans=[],open={},scans=[];
+  const shadowPlans=[],shadowOpen={};
   let flipped=0;
   anchors.forEach((T,k)=>{
     const sliced={};
@@ -109,6 +112,9 @@ function walkForward(o){
     scans.push(sc);
     for(const pl of cand){
       const key=pl.sym+'|'+pl.side, opp=pl.sym+'|'+(-pl.side);
+      if(pl.shadow){                                              /* gölge: kendi defteri, canlıyı etkilemez */
+        if(dedupe&&shadowOpen[key]&&shadowOpen[key].t_end>T)continue;
+        shadowPlans.push(pl);shadowOpen[key]=pl;continue;}
       if(dedupe&&open[key]&&open[key].t_end>T)continue;          /* zaten açık, tekrar yok */
       if(dedupe&&open[opp]&&open[opp].t_end>T){open[opp].t_end=T;flipped++;delete open[opp];}
       plans.push(pl);open[key]=pl;}
@@ -119,7 +125,8 @@ function walkForward(o){
         (isFinite(sc.famHi)?` (eşik +${sc.famHi.toFixed(2)}R)`:'')+why+` · ${sc.ms}ms`);
   });
   const res=backtest(plans,rowsBySym,{funding});
-  return {tf,anchors:anchors.length,flipped,scans,...res};
+  const shadow=shadowPlans.length?backtest(shadowPlans,rowsBySym,{funding}):null;
+  return {tf,anchors:anchors.length,flipped,scans,shadow,...res};
 }
 
 /* ---- rapor ---- */
@@ -146,6 +153,17 @@ function formatReport(res){
     for(const s of close)
       lines.push(`    ${new Date(s.t).toISOString().slice(0,10)} ${String(s.best.disp).padEnd(5)} ${p2(s.best.ev)}R±${(2*s.best.se).toFixed(2)}  eşik +${s.famHi.toFixed(2)}  uzaklık ${p2(s.gap)}  [şans ${s.best.okChance?'✓':'✗'} hata ${s.best.okErr?'✓':'✗'}]`);
   }
+  if(res.shadow){
+    const sh=res.shadow, spf=isFinite(sh.profitFactor)?sh.profitFactor.toFixed(2):'∞';
+    lines.push('',`GÖLGE — yakın kaçanlar (şans ✓ hata ✗; canlıda yayınlanmaz, yalnız ölçüm): ${sh.rows.length} plan, ${sh.n} kapandı`,
+      `  Toplam: ${p2(sh.totalR)}R   Ortalama: ${p2(sh.avgR)}R   Medyan: ${p2(sh.medianR)}R   Kazanma: ${(sh.winRate*100).toFixed(1)}%   PF: ${spf}   MaxDD: ${sh.maxDrawdown.toFixed(2)}R`,
+      `  Durumlar: ${Object.entries(sh.byState).map(([k,v])=>`${k}:${v}`).join('  ')||'—'}`);
+    if(sh.n){
+      const R=sh.rows.filter(r=>KAPANDI.has(r.state)).map(r=>r.R);
+      const m=sh.avgR, sd=Math.sqrt(R.reduce((a,x)=>a+(x-m)*(x-m),0)/Math.max(1,R.length-1));
+      const t=sd>0?m/(sd/Math.sqrt(R.length)):0;
+      lines.push(`  Ortalama R'nin sıfırdan farkı: t=${t.toFixed(2)} (n=${R.length}) — |t|<2 ise gölge kazancı şansla açıklanabilir`);}
+  }
   if(res.rows.length){
     lines.push('','Planlar:');
     for(const r of res.rows){
@@ -157,8 +175,9 @@ function formatReport(res){
 
 function toCsv(res){
   const h='t0,sym,side,entry,ev,famHi,state,R,bars,closed_at';
-  const rows=res.rows.map(r=>[new Date(r.t0).toISOString(),r.sym,r.side,r.entry,r.ev,r.famHi,r.state,r.R,r.bars,r.at?new Date(r.at).toISOString():''].join(','));
-  return [h,...rows].join('\n');
+  const row=(r,sh)=>[new Date(r.t0).toISOString(),r.sym,r.side,r.entry,r.ev,r.famHi,r.state,r.R,r.bars,r.at?new Date(r.at).toISOString():'',sh].join(',');
+  const rows=res.rows.map(r=>row(r,0)).concat(((res.shadow&&res.shadow.rows)||[]).map(r=>row(r,1)));
+  return [h+',shadow',...rows].join('\n');
 }
 
 function scansCsv(res){
@@ -172,6 +191,11 @@ module.exports={backtest,aggregate,runOne,walkForward,modelGenerate,formatReport
 /* ---- CLI ----
    node backtest.js [--tf 1h] [--step N] [--warmup N] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
                     [--assets BTC,ETH,...] [--funding 0.0001] [--offline] [--csv out.csv] [--json out.json]
+                    [--shadow] [--pages N]
+   --shadow : yakın kaçanları (şans ✓ hata ✗) gölge plan olarak ileriye oynat, AYRI raporla.
+              Hata kapısını gevşetmeden "kapı gerçek kenarı mı reddediyor" sorusunu ölçer.
+   --pages N: daha derin geçmiş (N×1000 bar) — ayrı önbellek dosyası, canlı dosyaya dokunmaz.
+              se = sd/√(geçmiş/hz) olduğundan erken çapalarda hata payı canlıyla eşitlenir.
    Veri: varsayılan engine.klines (Binance + disk önbelleği). --offline yalnız
    CACHE_DIR'deki kl-<sym>-<tf>.json dosyalarını okur, ağa çıkmaz.
    Varsayılan step: canlı bot günde bir tarar → 1h:24, 4h:6, 1d:1. */
@@ -191,21 +215,23 @@ if(require.main===module){
     const to=opt('--to')?Date.parse(opt('--to')):null;
     const funding=opt('--funding')!=null?+opt('--funding'):null;
     const want=opt('--assets')?new Set(opt('--assets').split(',').map(s=>s.trim().toUpperCase())):null;
+    const pages=opt('--pages')?+opt('--pages'):undefined;          /* derin geçmiş: ayrı önbellek dosyası */
+    const shadow=has('--shadow');
     const assets=eng.ASSETS.filter(([,d])=>!want||want.has(d));
     if(want&&assets.length<eng.ASSETS.length)
       console.error(`UYARI: ${assets.length}/${eng.ASSETS.length} varlık — aile eşiği canlıdan farklı çıkar.`);
     const rowsBySym={};
     for(const [sym,disp] of assets){
       if(has('--offline')){
-        const f=path.join(process.env.CACHE_DIR||'/tmp/islemyok-cache',`kl-${sym}-${tf}.json`);
+        const f=eng.cacheFile(sym,tf,pages);
         try{rowsBySym[sym]=JSON.parse(fs.readFileSync(f,'utf8'));}
         catch(e){console.error(`${disp}: önbellek yok (${f})`);continue;}
       }else{
         process.stderr.write(`${disp} verisi…\n`);
-        rowsBySym[sym]=await eng.klines(sym,tf);}
+        rowsBySym[sym]=await eng.klines(sym,tf,pages);}
     }
     if(!Object.keys(rowsBySym).length){console.error('veri yok');process.exit(1);}
-    const res=walkForward({rowsBySym,tf,generate:modelGenerate(eng,tf),step,warmup,from,to,funding,
+    const res=walkForward({rowsBySym,tf,generate:modelGenerate(eng,tf,{shadow}),step,warmup,from,to,funding,
                            log:m=>process.stderr.write(m+'\n')});
     console.log(formatReport(res));
     if(opt('--csv')){fs.writeFileSync(opt('--csv'),toCsv(res));

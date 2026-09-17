@@ -45,6 +45,14 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   `npm run backtest -- [--tf 1h] [--step 24] [--warmup N] [--from 2025-01-01] [--to …]
      [--assets BTC,ETH] [--funding x] [--offline] [--csv out.csv] [--json out.json]`
   `--offline`: yalnız `CACHE_DIR/kl-<sym>-<tf>.json` okur, ağa çıkmaz. Testler: `backtest.test.js`.
+  Her çapada teşhis: en iyi sonuç ± hata payı ve hangi kapıda kaldığı; sonda çapa özeti ve
+  eşiğe en yakın 5 çapa (`<ad>-capa.csv`).
+  **`--shadow`**: yakın kaçanları (şans ✓ hata ✗) gölge plan olarak ileriye oynatır, gerçek
+  planlardan AYRI raporlar (t-istatistiğiyle). Hata kapısını gevşetmeden "kapı gerçek kenarı mı
+  reddediyor" sorusunu ölçer; gölge planlar canlıda yayınlanmaz.
+  **`--pages N`**: derin geçmiş (N×1000 bar), `kl-<sym>-<tf>-pN.json` ayrı dosyada — canlı
+  önbellek değişmez. `se = sd/√(geçmiş/hz)` olduğundan erken çapalarda hata payı canlıyla eşitlenir;
+  kısa warmup'lı koşular hata kapısını olduğundan katı gösterir.
 * `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri.
   `scanMarket` (canlı, Binance) ve `scanRows` (as-of, barlar verilir, ağ yok) ortak
   `scanCores` gövdesini paylaşır; `buildCore` barlardan kalibrasyon.

@@ -151,3 +151,35 @@ test('walk-forward: --from ilk çapadan önceyse log uyarır', ()=>{
   walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:10,from:1000,generate:()=>[],log:m=>logs.push(m)});
   assert.ok(logs.some(m=>/^not: --from/.test(m)));
 });
+
+/* ---------- gölge (yakın kaçan) planlar ---------- */
+test('modelGenerate --shadow: nearMisses gölge plan olur, hits olmaz; shadow kapalıyken üretilmez', ()=>{
+  const {planLevels}=require('./engine');
+  const S=(sym)=>({sym,disp:sym.slice(0,3),P0:100,perDay:24});
+  const plan={side:1,dStop:0.1,Rm:2,hz:30,tMed:10,ev:0.5,se:0.1};
+  const eng={scanRows:()=>({hits:[{S:S('BTCUSDT'),plan}],nearMisses:[{S:S('ETHUSDT'),plan}],famHi:0.3,cores:2,fails:[],tops:[]}),planLevels};
+  const on=modelGenerate(eng,'1h',{shadow:true})(5000,{});
+  assert.deepStrictEqual(on.map(p=>[p.disp,p.shadow]),[['BTC',false],['ETH',true]]);
+  const off=modelGenerate(eng,'1h')(5000,{});
+  assert.deepStrictEqual(off.map(p=>[p.disp,p.shadow]),[['BTC',false]]);
+});
+
+test('walk-forward: gölge planlar ayrı defterde, gerçek metrikleri etkilemez, rapor ve CSV ayrı gösterir', ()=>{
+  const bars=series(20).map(b=>b.t>6000?bar(b.t,112,99,110):b);        // T=6000 sonrası TP2
+  const gen=(T)=>T===6000?[P({sym:'A',t0:T,t_end:T+5000}),{...P({sym:'A',t0:T,t_end:T+5000}),shadow:true}]:[];
+  const res=walkForward({rowsBySym:{A:bars},tf:'1h',step:5,warmup:5,generate:gen});
+  assert.strictEqual(res.rows.length,1); assert.strictEqual(res.n,1);            // gerçek: 1
+  assert.ok(res.shadow); assert.strictEqual(res.shadow.rows.length,1); near(res.shadow.totalR,1-COST);
+  const rep=formatReport(res);
+  assert.match(rep,/GÖLGE — yakın kaçanlar .* 1 plan, 1 kapandı/);
+  assert.match(rep,/sıfırdan farkı: t=/);
+  const csv=require('./backtest').toCsv(res).split('\n');
+  assert.match(csv[0],/,shadow$/); assert.match(csv[1],/,0$/); assert.match(csv[2],/,1$/);
+});
+
+test('walk-forward: gölge açıkken aynı sym+yön gölge tekrar açılmaz; gölge yoksa shadow null', ()=>{
+  const gen=(T)=>[{...P({sym:'A',t0:T,t_end:T+10000}),shadow:true}];
+  const res=walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:5,generate:gen});
+  assert.strictEqual(res.rows.length,0); assert.strictEqual(res.shadow.rows.length,2);   // 6000 açar, 11000 atlanır, 16000 açar
+  assert.strictEqual(walkForward({rowsBySym:{A:series(20)},tf:'1h',step:5,warmup:5,generate:()=>[]}).shadow,null);
+});
