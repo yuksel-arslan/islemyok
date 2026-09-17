@@ -9,6 +9,7 @@ Son güncelleme: 2026-09-17 (ilk GitHub Actions koşusu · ajan turu 2026-38)
 Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd worker && npm run yapilandir` → `site/yapilandirma.js`):
 - `REF_BINANCE=` · `REF_OKX=` · `REF_BYBIT=` — hangileri varsa (https, borsanın kendi alan adı)
 - `ADSENSE_PUB=` (ca-pub-… kimliği) · `ADSENSE_SLOT_ICERIK=` · `ADSENSE_SLOT_ARAC=` — birim kimlikleri; boşsa yalnız Auto ads
+- Repo ayarı: Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests" aç (ajan PR açamıyor, bkz. aşağıda) — ya da `claude/ajan-2026-38` PR'ını elle aç.
 
 ## Yapıldı
 - 2026-09-17: plan, takvim, materyaller. Zamanlayıcı: GitHub Actions `.github/workflows/ajan.yml` (Pazartesi 09:00 TSİ); tek gizli `CLAUDE_CODE_OAUTH_TOKEN`.
@@ -29,7 +30,12 @@ Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd wo
   t=1.44). Cömert modda %78 / +93.048 TL ile "yendi" görünüyordu — 49 sinyalde giriş hiç dolmadı, %29 mesaj
   silinmiş. Kanal adı anonim (site: Kanal E); kart `plan/kartlar/2026-38.md`, tablo `strateji-testleri.html`
   güncellendi (5 kanal), X metni `plan/materyal/x-metinleri.md`.
-- Testler: 75/75. Kod dalı `claude/ajan-2026-38`, PR açılıyor.
+- Testler: 75/75. Kod dalı `claude/ajan-2026-38` gönderildi (push başarılı). **`gh pr create` başarısız:**
+  "GitHub Actions is not permitted to create or approve pull requests" — repo ayarı (Settings → Actions →
+  General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests") kapalı.
+  **Onay bekliyor: bu ayarı aç ya da PR'ı elle oluştur** →
+  <https://github.com/yuksel-arslan/islemyok/pull/new/claude/ajan-2026-38>. Ayar açılırsa sonraki koşularda
+  ajan PR'ı kendi açar.
 
 ## Gelecek hafta (2026-39, 21 Eyl)
 - Linkler/kimlik geldiyse `npm run yapilandir` → `npm test` → yayın; referans.html'deki oranları borsa sayfasıyla kontrol et.
