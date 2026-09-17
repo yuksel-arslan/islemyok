@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "main": "bot.js",
-  "scripts": { "start": "node bot.js", "test": "node --test", "backtest": "node backtest.js", "trackrecord": "node trackrecord.js" },
+  "scripts": { "start": "node bot.js", "test": "node --test", "backtest": "node backtest.js", "trackrecord": "node trackrecord.js", "strategies": "node strategies.js" },
   "engines": { "node": ">=20" },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.60",

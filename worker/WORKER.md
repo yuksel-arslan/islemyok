@@ -53,6 +53,13 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   **`--pages N`**: derin geçmiş (N×1000 bar), `kl-<sym>-<tf>-pN.json` ayrı dosyada — canlı
   önbellek değişmez. `se = sd/√(geçmiş/hz)` olduğundan erken çapalarda hata payı canlıyla eşitlenir;
   kısa warmup'lı koşular hata kapısını olduğundan katı gösterir.
+* `strategies.js` — **strateji laboratuvarı**: kural tabanlı, literatürde kripto için belgelenmiş
+  dört aile (TSMOM 20/60g, Donchian 20/55g, 3g geri dönüş z±2, kesitsel momentum 30g ilk3/son3).
+  Aynı stop/hedef makinesi (ufuk 1σ stop, rm×stop hedef), aynı oynatma, walk-forward, look-ahead yok
+  (vol nedensel EWMA). **Şans kontrolü içeride:** aynı girişler rastgele yönle K tekrar → p_şans.
+  **Karar kuralı önceden:** n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02 → GEÇTİ. Dakikalar sürer
+  (computeCore yok). Testler: `strategies.test.js`. Fonlama primi: çevrimdışı veri yok, sonraya.
+  `npm run strategies -- --tf 1h --pages 40 --offline [--strats tsmom20,donch55] [--controls 20] [--csv s.csv]`
 * `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
   bariyer/maliyet/stop/vol konisi; tek fark simülasyon başlangıçlarının tüm geçmişten değil,
   **şu anki duruma** (işaretli momentum 5g/20g + vol rejimi) en yakın K pencereden çekilmesi.
