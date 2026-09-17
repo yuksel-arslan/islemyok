@@ -70,6 +70,17 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   Rapor fiyat/fonlama payını ayrı yazar. Fiyat serisi spot (perp yakın vekil). Testler: `funding.test.js`.
   `npm run funding -- --fetch --pages 5` · `npm run funding -- --now` ·
   `npm run strategies -- --tf 1h --pages 40 --offline --strats fund_pct,fund_abs --csv fund.csv`
+* `kanal.js` — **Telegram sinyal kanalı testi ("maymun testi")**. `--discover` tohum kanallardaki
+  t.me bağlantılarını gezer, sinyal sayısına göre sıralar; `--fetch` herkese açık önizlemeyi (t.me/s) çeker,
+  toleranslı ayrıştırıcı (TR/EN, emoji yön, bölge girişi, numaralı hedefler; hedef girişin doğru tarafında ve
+  uzağında olmalı); `--sample` ayrışmayan sinyal benzeri mesajları basar; `--test` gerçek mumla oynatır,
+  aynı işlemleri yönü rastgele 50 kez oynatır (maymun), BTC al-tut ile kıyaslar, silinmiş mesaj payını
+  (id boşlukları) yazar. **`--strict` = gerçek işlem:** giriş dolmalı, yarı kapatma yok — yayınlanan hüküm
+  daima sıkı moddan; cömert mod "doğrulanmadı" etiketi taşır. En çok sinyal alan 25 coin (`--maxsyms`),
+  veri derinliği sinyal tarihine göre. Eylül 2026: 4 kanal, sıkı modda 4/4 yenemedi
+  (cömertte 3 "yendi" görünüyordu: dolmayan limit girişi, TP1 yarı kapatma, %26–29 silinmiş mesaj).
+  Sitede anonim (Kanal A–D). Testler: `kanal.test.js`. Yalnız kamuya açık mesajlar; giriş yapılmaz.
+  `npm run kanal -- --discover a,b | --fetch a,b --pages 40 | --test a,b --strict --offline | --sample a --n 5`
 * `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
   bariyer/maliyet/stop/vol konisi; tek fark simülasyon başlangıçlarının tüm geçmişten değil,
   **şu anki duruma** (işaretli momentum 5g/20g + vol rejimi) en yakın K pencereden çekilmesi.
