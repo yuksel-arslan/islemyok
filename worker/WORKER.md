@@ -29,7 +29,69 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
 ## Dosyalar
 
 * `bot.js` — zamanlama, Telegram, PNG çizimi
-* `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri
+* `trackrecord.js` — **gerçek track record**: Neon `signals` (salt okunur) veya kamuya
+  açık `signals.json` üzerinden yayınlanmış sinyallerin gerçekleşen sonucu (toplam R,
+  kazanma, profit factor, max drawdown). Kayıtlar yayın anında yazıldığı için look-ahead
+  yoktur — "sistem çalışıyor mu" sorusunun en güçlü cevabı. `--bars-dir` ile her kapanmış
+  sinyal botla aynı kodla (`replayPlan`+`netR`) yeniden hesaplanıp kayıtla karşılaştırılır;
+  uyuşmazlıkta çıkış kodu 3. Ledger'a yazmaz. Testler: `trackrecord.test.js`.
+  `npm run trackrecord -- signals.json | --url <url> | --db  [--bars-dir CACHE_DIR]`
+* `backtest.js` — **walk-forward backtest**: modeli geçmişte gezdirir. Her çapa anında
+  yalnız o ana kadarki barlarla `engine.scanRows` çalışır (canlı taramayla aynı kod, aynı
+  eşikler), iki kapıyı geçen plan o anki fiyattan açılır, sonra T sonrası barlara karşı
+  oynatılır. Look-ahead yok. Açık sym+yön varken tekrar açmaz, ters yön gelirse kapatır
+  (canlı `publishNew` ile aynı). Çapa başına maliyet ≈ bir canlı tarama; `--step`/`--from`/
+  `--to` ile sınırla. `--assets` alt küme verirsen aile eşiği canlıdan farklı çıkar (uyarır).
+  `npm run backtest -- [--tf 1h] [--step 24] [--warmup N] [--from 2025-01-01] [--to …]
+     [--assets BTC,ETH] [--funding x] [--offline] [--csv out.csv] [--json out.json]`
+  `--offline`: yalnız `CACHE_DIR/kl-<sym>-<tf>.json` okur, ağa çıkmaz. Testler: `backtest.test.js`.
+  Her çapada teşhis: en iyi sonuç ± hata payı ve hangi kapıda kaldığı; sonda çapa özeti ve
+  eşiğe en yakın 5 çapa (`<ad>-capa.csv`).
+  **`--shadow`**: yakın kaçanları (şans ✓ hata ✗) gölge plan olarak ileriye oynatır, gerçek
+  planlardan AYRI raporlar (t-istatistiğiyle). Hata kapısını gevşetmeden "kapı gerçek kenarı mı
+  reddediyor" sorusunu ölçer; gölge planlar canlıda yayınlanmaz.
+  **`--pages N`**: derin geçmiş (N×1000 bar), `kl-<sym>-<tf>-pN.json` ayrı dosyada — canlı
+  önbellek değişmez. `se = sd/√(geçmiş/hz)` olduğundan erken çapalarda hata payı canlıyla eşitlenir;
+  kısa warmup'lı koşular hata kapısını olduğundan katı gösterir.
+* `strategies.js` — **strateji laboratuvarı**: kural tabanlı, literatürde kripto için belgelenmiş
+  dört aile (TSMOM 20/60g, Donchian 20/55g, 3g geri dönüş z±2, kesitsel momentum 30g ilk3/son3).
+  Aynı stop/hedef makinesi (ufuk 1σ stop, rm×stop hedef), aynı oynatma, walk-forward, look-ahead yok
+  (vol nedensel EWMA). **Şans kontrolü içeride (işaret-rastgeleleme):** gerçek plan listesi, yalnız yön
+  rastgele çevrilir, aynı giriş/vade/maliyet; K=50 tekrar → p_şans. Sentetik doğrulama: saf gürültüde
+  6/6 kaldı, trend rejiminde momentum/kırılım geçti, geri dönüş kaldı.
+  **Karar kuralı önceden:** n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02 → GEÇTİ. Dakikalar sürer
+  (computeCore yok). Testler: `strategies.test.js`. Fonlama primi: çevrimdışı veri yok, sonraya.
+  `npm run strategies -- --tf 1h --pages 40 --offline [--strats tsmom20,donch55] [--controls 50] [--csv s.csv]`
+* `funding.js` — **fonlama oranı verisi** (Binance USDⓈ-M, 8 saatlik). `--fetch` geçmişi çeker
+  (`fund-<sym>.json`, artımlı), `--now` bugünkü oran/24s ort/yıllık/90g yüzdelik ve iki stratejinin
+  bugünkü yönünü basar. Yardımcılar yalnız geçmişe bakar. Laboratuvarda `fund_pct` (90g yüzdelik ≥90 →
+  short, ≤10 → long) ve `fund_abs` (24s ort ≥ %0.03/8s → short, ≤ −%0.03 → long); 3 gün tutuş, 1.5R.
+  **Gerçekleşen fonlama ödemesi R'ye eklenir** (tutuş boyunca gerçekten alınan/ödenen), şans kontrolüne de.
+  Rapor fiyat/fonlama payını ayrı yazar. Fiyat serisi spot (perp yakın vekil). Testler: `funding.test.js`.
+  `npm run funding -- --fetch --pages 5` · `npm run funding -- --now` ·
+  `npm run strategies -- --tf 1h --pages 40 --offline --strats fund_pct,fund_abs --csv fund.csv`
+* `kanal.js` — **Telegram sinyal kanalı testi ("maymun testi")**. `--discover` tohum kanallardaki
+  t.me bağlantılarını gezer, sinyal sayısına göre sıralar; `--fetch` herkese açık önizlemeyi (t.me/s) çeker,
+  toleranslı ayrıştırıcı (TR/EN, emoji yön, bölge girişi, numaralı hedefler; hedef girişin doğru tarafında ve
+  uzağında olmalı); `--sample` ayrışmayan sinyal benzeri mesajları basar; `--test` gerçek mumla oynatır,
+  aynı işlemleri yönü rastgele 50 kez oynatır (maymun), BTC al-tut ile kıyaslar, silinmiş mesaj payını
+  (id boşlukları) yazar. **`--strict` = gerçek işlem:** giriş dolmalı, yarı kapatma yok — yayınlanan hüküm
+  daima sıkı moddan; cömert mod "doğrulanmadı" etiketi taşır. En çok sinyal alan 25 coin (`--maxsyms`),
+  veri derinliği sinyal tarihine göre. Eylül 2026: 4 kanal, sıkı modda 4/4 yenemedi
+  (cömertte 3 "yendi" görünüyordu: dolmayan limit girişi, TP1 yarı kapatma, %26–29 silinmiş mesaj).
+  Sitede anonim (Kanal A–D). Testler: `kanal.test.js`. Yalnız kamuya açık mesajlar; giriş yapılmaz.
+  `npm run kanal -- --discover a,b | --fetch a,b --pages 40 | --test a,b --strict --offline | --sample a --n 5`
+* `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
+  bariyer/maliyet/stop/vol konisi; tek fark simülasyon başlangıçlarının tüm geçmişten değil,
+  **şu anki duruma** (işaretli momentum 5g/20g + vol rejimi) en yakın K pencereden çekilmesi.
+  Gerekçe: koşulsuz `evalCombo`'da başlangıç `rnd()*(u.length−hz)` → yön bilgisi yalnız geçmiş
+  ortalama sürüklenme; walk-forward'da gerçekleşen ≈ 0 çıktı. Canlıya bağlı değil; `engine_core.js`
+  değişmez. `scanCores/scanRows` isteğe bağlı `evaluator` alır (canlı `scanMarket` geçmez).
+  Sınama: `npm run backtest -- --model cond ...` aynı çapalarda base ile A/B. Karar kuralı önceden:
+  gerçek planlarda ort. R > 0 ve t ≥ 2 yoksa fikir ölür; varsa `index.html`'e taşınır.
+* `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri.
+  `scanMarket` (canlı, Binance) ve `scanRows` (as-of, barlar verilir, ağ yok) ortak
+  `scanCores` gövdesini paylaşır; `buildCore` barlardan kalibrasyon.
 * `engine_core.js` — **ÜRETİLMİŞ DOSYA, elle düzenleme.** Modelin `../site/index.html`
   içinden dilimlenmiş çekirdeği: buildVol, kuantil regresyonu + EVT kalibrasyonu,
   computeCore, evalCombo.
@@ -81,6 +143,29 @@ Değişkenler Railway panel → servis → **Variables** altında. Deploy loglar
 `İşlem Yok worker hazır · cron: 0 6 * * * UTC` satırını gör. `.railwayignore`
 `node_modules`'ü dışarıda tutar; Railpack Linux için `package-lock.json`'dan kurar
 (`@napi-rs/canvas` native olduğu için bu şart).
+
+## Backtest bulguları (2026-09-17, 1h, 10 varlık, 40k bar ≈ 4.5 yıl, look-ahead yok)
+
+Aynı veride üç bağımsız bakış, aynı cevap: **1h barda 1–5 günlük ufukta spot majörlerde yön
+tahmininden komisyon (22bp) sonrası kenar çıkmıyor.**
+
+| Bakış | n | Sonuç |
+|---|---|---|
+| Mevcut model (iki kapı) | 8 | +0.04R/plan, sıfırdan ayırt edilemez |
+| Gölge (şans ✓ hata ✗) | 91 | +0.05R/plan, t=0.41 → hata kapısı gerçek kenar reddetmiyor |
+| Koşullu (analog) bootstrap | 0 | komşu pencereyle nEff küçülüyor, hata kapısı hiç açılmıyor — fikir öldü |
+| tsmom20 / tsmom60 | 4071 / 3674 | −81R / −121R; şans = saf komisyon (−105 / −112). Brüt ≈ 0 |
+| donch20 / donch55 | 155 / 96 | ≈ 0 |
+| revert3 | 288 | −36R, t=−2.5, şanstan kötü (p=0.88) |
+| xsmom30 | 2368 | −58R, şans −51 |
+
+Teşhis: `evalCombo` simülasyon başlangıcını tüm geçmişten rastgele seçer; yön bilgisi yalnız geçmiş
+ortalama sürüklenme. Kapılar doğru kalibre (ev − eşik ≈ gerçekleşen). Sorun kapılarda değil, sinyal
+kaynağında. **Yapılmaması gereken:** eşik/çarpan oynamak, kombinasyon eklemek, sonucu gördükten sonra
+kural çevirmek (revert3 → "devam").
+
+**Test edilmemiş adaylar (veri gerekli):** fonlama/basis carry (futures `fapi`; sitede modül var),
+haftalık ufuk momentum (günlük bar, 1–4 hafta tutuş, komisyon amorti).
 
 ## Bilinen sınırlar (v1)
 
