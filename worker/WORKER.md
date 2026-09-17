@@ -53,6 +53,14 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   **`--pages N`**: derin geçmiş (N×1000 bar), `kl-<sym>-<tf>-pN.json` ayrı dosyada — canlı
   önbellek değişmez. `se = sd/√(geçmiş/hz)` olduğundan erken çapalarda hata payı canlıyla eşitlenir;
   kısa warmup'lı koşular hata kapısını olduğundan katı gösterir.
+* `engine_cond.js` — **DENEYSEL** koşullu (analog) bootstrap değerlendirici. `evalCombo` ile aynı
+  bariyer/maliyet/stop/vol konisi; tek fark simülasyon başlangıçlarının tüm geçmişten değil,
+  **şu anki duruma** (işaretli momentum 5g/20g + vol rejimi) en yakın K pencereden çekilmesi.
+  Gerekçe: koşulsuz `evalCombo`'da başlangıç `rnd()*(u.length−hz)` → yön bilgisi yalnız geçmiş
+  ortalama sürüklenme; walk-forward'da gerçekleşen ≈ 0 çıktı. Canlıya bağlı değil; `engine_core.js`
+  değişmez. `scanCores/scanRows` isteğe bağlı `evaluator` alır (canlı `scanMarket` geçmez).
+  Sınama: `npm run backtest -- --model cond ...` aynı çapalarda base ile A/B. Karar kuralı önceden:
+  gerçek planlarda ort. R > 0 ve t ≥ 2 yoksa fikir ölür; varsa `index.html`'e taşınır.
 * `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri.
   `scanMarket` (canlı, Binance) ve `scanRows` (as-of, barlar verilir, ağ yok) ortak
   `scanCores` gövdesini paylaşır; `buildCore` barlardan kalibrasyon.

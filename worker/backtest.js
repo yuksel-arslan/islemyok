@@ -65,7 +65,7 @@ function modelGenerate(eng,tf,opts={}){
             rm:lv.Rm,d_stop:h.plan.dStop,ev:lv.ev,se:lv.se,famHi,hz:lv.hz,
             t0:T,t_end:T+lv.hz*ms,shadow:!!shadow};};
   return (T,sliced)=>{
-    const R=eng.scanRows(sliced,tf);
+    const R=eng.scanRows(sliced,tf,undefined,opts.evaluator);
     const out=R.hits.map(h=>toPlan(h,T,R.famHi,false));
     /* gölge: şans ✓ hata ✗ olanlar — canlıda YAYINLANMAZ, yalnız ölçüm için */
     if(opts.shadow)for(const h of (R.nearMisses||[]))out.push(toPlan(h,T,R.famHi,true));
@@ -127,7 +127,7 @@ function walkForward(o){
   });
   const res=backtest(plans,rowsBySym,{funding});
   const shadow=shadowPlans.length?backtest(shadowPlans,rowsBySym,{funding}):null;
-  return {tf,anchors:anchors.length,flipped,scans,shadow,...res};
+  return {tf,model:o.model||'base',anchors:anchors.length,flipped,scans,shadow,...res};
 }
 
 /* ---- rapor ---- */
@@ -135,7 +135,7 @@ function formatReport(res){
   const p2=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
   const pf=isFinite(res.profitFactor)?res.profitFactor.toFixed(2):'∞';
   const st=Object.entries(res.byState).map(([k,v])=>`${k}:${v}`).join('  ')||'—';
-  const head=res.anchors!=null?`Walk-forward ${res.tf||''} — ${res.anchors} çapa, ${res.rows.length} plan açıldı, ${res.n} kapandı (${res.skipped} açık/veri yok, ${res.flipped||0} yön döndü)`
+  const head=res.anchors!=null?`Walk-forward ${res.tf||''} [model: ${res.model||'base'}] — ${res.anchors} çapa, ${res.rows.length} plan açıldı, ${res.n} kapandı (${res.skipped} açık/veri yok, ${res.flipped||0} yön döndü)`
                               :`Backtest — ${res.n} kapanmış plan (${res.skipped} atlandı)`;
   const lines=[head,
     `Toplam: ${p2(res.totalR)}R   Ortalama: ${p2(res.avgR)}R   Medyan: ${p2(res.medianR)}R`,
@@ -192,7 +192,10 @@ module.exports={backtest,aggregate,runOne,walkForward,modelGenerate,formatReport
 /* ---- CLI ----
    node backtest.js [--tf 1h] [--step N] [--warmup N] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
                     [--assets BTC,ETH,...] [--funding 0.0001] [--offline] [--csv out.csv] [--json out.json]
-                    [--shadow] [--pages N]
+                    [--shadow] [--pages N] [--model base|cond] [--frac 0.15] [--mink 200]
+   --model cond: DENEYSEL koşullu (analog) bootstrap (engine_cond.js). Aynı eşikler,
+              aynı bariyer; yalnız simülasyon başlangıçları şu anki duruma benzeyen
+              pencerelerden. A/B için base ile aynı çapalarda koştur.
    --shadow : yakın kaçanları (şans ✓ hata ✗) gölge plan olarak ileriye oynat, AYRI raporla.
               Hata kapısını gevşetmeden "kapı gerçek kenarı mı reddediyor" sorusunu ölçer.
    --pages N: daha derin geçmiş (N×1000 bar) — ayrı önbellek dosyası, canlı dosyaya dokunmaz.
@@ -218,6 +221,11 @@ if(require.main===module){
     const want=opt('--assets')?new Set(opt('--assets').split(',').map(s=>s.trim().toUpperCase())):null;
     const pages=opt('--pages')?+opt('--pages'):undefined;          /* derin geçmiş: ayrı önbellek dosyası */
     const shadow=has('--shadow');
+    const model=opt('--model','base');
+    let evaluator;
+    if(model==='cond'){const c=require('./engine_cond');const co={frac:+opt('--frac',0.15),minK:+opt('--mink',200)};
+      evaluator=(S,sd,hz,q,rm,N,seed,dm)=>c.evalComboCond(S,sd,hz,q,rm,N,seed,dm,co);}
+    else if(model!=='base'){console.error('model: base | cond');process.exit(2);}
     const assets=eng.ASSETS.filter(([,d])=>!want||want.has(d));
     if(want&&assets.length<eng.ASSETS.length)
       console.error(`UYARI: ${assets.length}/${eng.ASSETS.length} varlık — aile eşiği canlıdan farklı çıkar.`);
@@ -232,7 +240,7 @@ if(require.main===module){
         rowsBySym[sym]=await eng.klines(sym,tf,pages);}
     }
     if(!Object.keys(rowsBySym).length){console.error('veri yok');process.exit(1);}
-    const res=walkForward({rowsBySym,tf,generate:modelGenerate(eng,tf,{shadow}),step,warmup,from,to,funding,
+    const res=walkForward({rowsBySym,tf,model,generate:modelGenerate(eng,tf,{shadow,evaluator}),step,warmup,from,to,funding,
                            log:m=>process.stderr.write(m+'\n')});
     console.log(formatReport(res));
     if(opt('--csv')){fs.writeFileSync(opt('--csv'),toCsv(res));

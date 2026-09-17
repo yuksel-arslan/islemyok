@@ -104,7 +104,7 @@ async function scanMarket(tf,log){
    bunu kullanır; look-ahead olmaması, çağıranın barları o anda kesmesine bağlıdır.
    Aile eşiği verilen varlık kümesi üzerinden hesaplanır: canlıyla aynı eşik için
    10 varlığın hepsi verilmelidir. */
-function scanRows(rowsBySym,tf,log){
+function scanRows(rowsBySym,tf,log,evaluator){
   const cores=[],fails=[];
   for(const [sym,disp] of ASSETS){
     const rows=rowsBySym[sym];if(!rows||!rows.length)continue;
@@ -112,12 +112,16 @@ function scanRows(rowsBySym,tf,log){
     catch(e){fails.push(`${disp}: ${e.message}`);}
   }
   if(!cores.length)return {tf,cores:0,combos:0,famHi:NaN,famMed:NaN,hits:[],nearMisses:[],tops:[],fails};
-  return {...scanCores(cores,tf,log),fails};
+  return {...scanCores(cores,tf,log,evaluator),fails};
 }
 
-/* ---- ortak tarama gövdesi: kombinasyonlar, aile eşiği, iki kapı ---- */
-function scanCores(cores,tf,log){
+/* ---- ortak tarama gövdesi: kombinasyonlar, aile eşiği, iki kapı ----
+   evaluator: (S,side,hz,q,rm,N,seed,demean)=>{ev,se,...} — varsayılan evalCombo.
+   Deneysel değerlendiriciler (engine_cond) buradan takılır; canlı scanMarket
+   parametreyi geçmez, dolayısıyla değişmez. */
+function scanCores(cores,tf,log,evaluator){
   log=log||(()=>{});
+  const evalFn=evaluator||evalCombo;
   const SIDES=[1,-1],QS=[0.05,0.10,0.25],RS=[1,1.5,2,3];
   const HZs=cores[0].HZ,combos=[];
   for(const sd of SIDES)for(const hz of HZs)for(const q of QS)for(const rm of RS)combos.push([sd,hz,q,rm]);
@@ -125,7 +129,7 @@ function scanCores(cores,tf,log){
   const perAsset=cores.map(S=>{
     const res=[];
     for(const [sd,hz,q,rm] of combos){
-      const o=evalCombo(S,sd,hz,q,rm,1500,987654,false);if(o)res.push(o);}
+      const o=evalFn(S,sd,hz,q,rm,1500,987654,false);if(o)res.push(o);}
     res.sort((a,b)=>b.ev-a.ev);return res;});
   log('aile-geneli şans eşiği…');
   const nullMax=[];
@@ -137,7 +141,7 @@ function scanCores(cores,tf,log){
          bu draw'larin MAKSIMUMU oldugu icin gurultu esigi yukari cekiyor,
          ustelik gercek sonuclar 1500 ile uretildigi icin karsilastirma
          eslesmiyordu. Site ile ayni. */
-      const o=evalCombo(S,sd,hz,q,rm,1500,3000+rep*7919,true);
+      const o=evalFn(S,sd,hz,q,rm,1500,3000+rep*7919,true);
       if(o&&o.ev>best)best=o.ev;}
     nullMax.push(best);}
   nullMax.sort((a,b)=>a-b);
