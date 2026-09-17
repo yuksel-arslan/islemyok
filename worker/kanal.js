@@ -93,8 +93,15 @@ async function testChannel(name,o={}){
   const eng=require('./engine');const {backtest,aggregate}=require('./backtest');const {mkPlan}=require('./strategies');
   const data=JSON.parse(fs.readFileSync(path.join(CACHE,`kanal-${name}.json`),'utf8'));
   const sigs=data.signals.filter(s=>isFinite(s.t));
+  /* veri derinliği sinyal tarihine göre: en eski sinyalden 30 gün öncesi yeter (1000 bar ≈ 42 gün) */
   const syms=[...new Set(sigs.map(s=>s.sym))];const bars={};
-  for(const s of syms){try{bars[s]=o.offline?JSON.parse(fs.readFileSync(eng.cacheFile(s,'1h',40),'utf8')):await eng.klines(s,'1h',40);}catch(e){}}
+  const oldest=Math.min(...sigs.map(s=>s.t));
+  const pages=Math.max(2,Math.min(40,Math.ceil((Date.now()-oldest+30*DAY)/(1000*36e5))+1));
+  const log=o.log||(()=>{});let k=0;
+  for(const s of syms){k++;
+    try{bars[s]=o.offline?JSON.parse(fs.readFileSync(eng.cacheFile(s,'1h',pages),'utf8')):await eng.klines(s,'1h',pages);
+        log(`  [${k}/${syms.length}] ${s} ${bars[s].length} bar`);}
+    catch(e){log(`  [${k}/${syms.length}] ${s} veri yok (${e.message})`);}}
   const plans=[],skipped={veriYok:0,gecersiz:0,girisUzak:0};
   for(const s of sigs){const b=bars[s.sym];if(!b){skipped.veriYok++;continue;}
     const i=b.findIndex(x=>x.t>s.t);const bar=i>0?b[i-1]:null;if(!bar){skipped.veriYok++;continue;}
@@ -111,7 +118,7 @@ async function testChannel(name,o={}){
   const mMean=monkey.reduce((a,b)=>a+b,0)/K,lo=monkey[Math.floor(K*0.05)],hi=monkey[Math.ceil(K*0.95)-1];
   const p=monkey.filter(x=>x>=real.totalR).length/K;
   /* BTC al-tut: ilk sinyalden son kapanışa */
-  let hold=NaN;const bb=bars['BTCUSDT']||(await (async()=>{try{return o.offline?JSON.parse(fs.readFileSync(eng.cacheFile('BTCUSDT','1h',40),'utf8')):await eng.klines('BTCUSDT','1h',40);}catch(e){return null;}})());
+  let hold=NaN;const bb=bars['BTCUSDT']||(await (async()=>{try{return o.offline?JSON.parse(fs.readFileSync(eng.cacheFile('BTCUSDT','1h',pages),'utf8')):await eng.klines('BTCUSDT','1h',pages);}catch(e){return null;}})());
   if(bb&&done.length){const t0=Math.min(...done.map(r=>r.t0)),t1=Math.max(...done.map(r=>r.at||r.t_end));
     const a=bb.find(x=>x.t>=t0),z=[...bb].reverse().find(x=>x.t<=t1);if(a&&z)hold=z.c/a.c-1;}
   const R=done.map(r=>r.R);const n=R.length;const m=n?real.totalR/n:0;
@@ -176,7 +183,8 @@ if(require.main===module){
         if(r.signals.length)console.log('   örnek:',JSON.stringify(r.signals[r.signals.length-1]));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
     if(opt('--test'))for(const ch of list(opt('--test'))){
-      try{const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50)});
+      try{process.stderr.write(`\n${ch}: veri çekiliyor…\n`);
+        const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50),log:m=>process.stderr.write(m+'\n')});
         console.log('\n'+card(r));
         if(opt('--csv'))fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-'+ch+'.csv',['t0,sym,side,entry,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,x.state,x.R].join(','))).join('\n'));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
