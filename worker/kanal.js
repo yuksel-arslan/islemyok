@@ -94,8 +94,14 @@ async function testChannel(name,o={}){
   const data=JSON.parse(fs.readFileSync(path.join(CACHE,`kanal-${name}.json`),'utf8'));
   const sigs=data.signals.filter(s=>isFinite(s.t));
   /* veri derinliği sinyal tarihine göre: en eski sinyalden 30 gün öncesi yeter (1000 bar ≈ 42 gün) */
-  const syms=[...new Set(sigs.map(s=>s.sym))];const bars={};
-  const oldest=Math.min(...sigs.map(s=>s.t));
+  /* en çok sinyal alan N coin yeter; tek-sinyallik coin'ler istatistiğe değil veri yüküne katkı yapar */
+  const cnt={};for(const x of sigs)cnt[x.sym]=(cnt[x.sym]||0)+1;
+  const maxSyms=o.maxSyms||25;
+  const syms=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,maxSyms);
+  const symSet=new Set(syms);const droppedSyms=Object.keys(cnt).length-syms.length;
+  const droppedSigs=sigs.filter(x=>!symSet.has(x.sym)).length;
+  const bars={};
+  const oldest=Math.min(...sigs.filter(x=>symSet.has(x.sym)).map(s=>s.t));
   const pages=Math.max(2,Math.min(40,Math.ceil((Date.now()-oldest+30*DAY)/(1000*36e5))+1));
   const log=o.log||(()=>{});let k=0;
   for(const s of syms){k++;
@@ -103,7 +109,7 @@ async function testChannel(name,o={}){
         log(`  [${k}/${syms.length}] ${s} ${bars[s].length} bar`);}
     catch(e){log(`  [${k}/${syms.length}] ${s} veri yok (${e.message})`);}}
   const plans=[],skipped={veriYok:0,gecersiz:0,girisUzak:0};
-  for(const s of sigs){const b=bars[s.sym];if(!b){skipped.veriYok++;continue;}
+  for(const s of sigs){if(!symSet.has(s.sym))continue;const b=bars[s.sym];if(!b){skipped.veriYok++;continue;}
     const i=b.findIndex(x=>x.t>s.t);const bar=i>0?b[i-1]:null;if(!bar){skipped.veriYok++;continue;}
     const p=toPlan(s,bar.c);if(!p){skipped.gecersiz++;continue;}
     if(p.offEntry>0.03){skipped.girisUzak++;continue;}         /* mesaj fiyatından >%3 uzak giriş: dolmamış say */
@@ -124,7 +130,7 @@ async function testChannel(name,o={}){
   const R=done.map(r=>r.R);const n=R.length;const m=n?real.totalR/n:0;
   const sd=n>1?Math.sqrt(R.reduce((a,x)=>a+(x-m)*(x-m),0)/(n-1)):0;const t=sd>0?m/(sd/Math.sqrt(n)):0;
   const verdict=n<30?'YETERSİZ VERİ':(p<=0.02&&t>=2.5)?'MAYMUNU YENDİ':'MAYMUNU YENEMEDİ';
-  return {channel:name,messages:data.messages,parsed:sigs.length,tested:n,skipped,totalR:real.totalR,avgR:m,t,winRate:real.winRate,
+  return {channel:name,messages:data.messages,parsed:sigs.length,tested:n,skipped,syms:syms.length,droppedSyms,droppedSigs,totalR:real.totalR,avgR:m,t,winRate:real.winRate,
           maxDrawdown:real.maxDrawdown,monkeyMean:mMean,monkeyLo:lo,monkeyHi:hi,p,hold,verdict,rows:real.rows,
           from:done.length?Math.min(...done.map(r=>r.t0)):null,to:done.length?Math.max(...done.map(r=>r.at||r.t_end)):null};
 }
@@ -134,7 +140,7 @@ function card(r){
   const tl=x=>(x>=0?'+':'−')+Math.abs(x*1000).toFixed(0)+' TL';                  /* 100 bin TL, işlem başına %1 risk: 1R = 1000 TL */
   return [
 `🐒 ${r.channel} — ${r.verdict}`,
-`${r.tested} sinyal test edildi (${r.messages} mesaj, ${r.parsed} sinyal ayrıştırıldı; atlanan: veri yok ${r.skipped.veriYok}, geçersiz ${r.skipped.gecersiz}, giriş uzak ${r.skipped.girisUzak}) · ${d(r.from)} → ${d(r.to)}`,
+`${r.tested} sinyal test edildi · en çok sinyal alan ${r.syms} coin (${r.messages} mesaj, ${r.parsed} sinyal ayrıştırıldı; ${r.droppedSyms} nadir coin'deki ${r.droppedSigs} sinyal dışarıda; atlanan: veri yok ${r.skipped.veriYok}, geçersiz ${r.skipped.gecersiz}, giriş uzak ${r.skipped.girisUzak}) · ${d(r.from)} → ${d(r.to)}`,
 ``,
 `100 bin TL, işlem başına %1 risk:`,
 `  Kanalın sinyalleri : ${tl(r.totalR)}   (isabet %${(r.winRate*100).toFixed(0)}, en kötü çekilme ${r.maxDrawdown.toFixed(1)}R)`,
@@ -184,7 +190,7 @@ if(require.main===module){
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
     if(opt('--test'))for(const ch of list(opt('--test'))){
       try{process.stderr.write(`\n${ch}: veri çekiliyor…\n`);
-        const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50),log:m=>process.stderr.write(m+'\n')});
+        const r=await testChannel(ch,{offline:a.includes('--offline'),controls:+opt('--controls',50),maxSyms:+opt('--maxsyms',25),log:m=>process.stderr.write(m+'\n')});
         console.log('\n'+card(r));
         if(opt('--csv'))fs.writeFileSync(opt('--csv').replace(/\.csv$/i,'')+'-'+ch+'.csv',['t0,sym,side,entry,state,R'].concat(r.rows.map(x=>[new Date(x.t0).toISOString(),x.sym,x.side,x.entry,x.state,x.R].join(','))).join('\n'));}
       catch(e){console.log(`${ch}: HATA ${e.message}`);}}
