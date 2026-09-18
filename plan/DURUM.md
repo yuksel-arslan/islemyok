@@ -37,6 +37,18 @@ Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd wo
   <https://github.com/yuksel-arslan/islemyok/pull/new/claude/ajan-2026-38>. Ayar açılırsa sonraki koşularda
   ajan PR'ı kendi açar.
 
+## Ajan için bekleyen iş (2026-09-18, Yüksel onayladı): olay deneyi sonucunu siteye işle
+Laboratuvar sonucu (`lab/olay.py`, kurgu ve kabul `lab/LAB.md`, ham çıktı Yüksel'in makinesinde `lab/cikti/olay-h1.txt`):
+- H1 zamanlama GEÇTİ: FOMC+TÜFE sonrası 24 saatte |getiri| plasebonun 1.45 katı (p=0.000, 91 olay, 10 varlık, 2022–2026);
+  yalnız FOMC 1.67 (p=0.000); yalnız TÜFE 1.30 (p=0.009, sınırda). En büyük saatlik hareket medyanda olaydan 2 saat sonra (q75: 9).
+- H2 yön×pozisyonlanma KALDI: olay öncesi fonlama ucu yönü öngörmüyor (n=202, −7.25R, t=−0.55, p_şans=0.26); olay dışı
+  kontrol de kaldı (n=224, +0.65R, t=0.06). Yön öngörülemez, iki koşulda da.
+Yapılacak (tek PR): (1) `site/strateji-testleri.html`'e "Olay takvimi: rüzgâr ne zaman çıkar" bölümü — yukarıdaki sayılar,
+yöntem (plasebo, K=2000), "yön değil zamanlama" vurgusu; tabloya H2 satırı (kaldı). (2) Ana sayfaya küçük uyarı: bugün/yarın
+`lab/olaylar.csv`'de olay varsa "FOMC/TÜFE günü: hareket normalin ~1.5 katı, ilk 2 saat; sıkı stop taşıma" (takvim JSON'a
+çevrilip `site/`'a konur, JS tarayıcıda okur). (3) X metni: "10 kural ve 5 kanal geçmedi; ilk geçen şey bir olay takvimi".
+Yasak: yön önermek, "FOMC'de al/sat" demek. Sinyal değil, kanıt.
+
 ## Gelecek hafta (2026-39, 21 Eyl)
 - Linkler/kimlik geldiyse `npm run yapilandir` → `npm test` → yayın; referans.html'deki oranları borsa sayfasıyla kontrol et.
 - Yeni haftalık kanal kartı (Kanal F): `--discover` bu kez henüz denenmemiş tohumlarla (crypto_trading_club/
