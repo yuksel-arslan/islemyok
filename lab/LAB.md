@@ -18,8 +18,10 @@ Transformer (`pytorch-forecasting`). Sonuç ne olursa olsun `site/strateji-testl
 ## Kurgu (önceden yazıldı; koşudan sonra değişmez)
 * Hedef `y_t = r_t / vol_{t-1}`: barın getirisi, önceki barın nedensel EWMA vol'una bölünmüş. Karar anında bilinir;
   kodlayıcıya sızıntı yok. Model sonraki H=24 barın y kantillerini (0.1/0.5/0.9) tahmin eder.
-* `skor = Σ q50 / √H`. `skor ≥ 0.5` long, `≤ −0.5` short. Plan: ufuk H bar, stop = vol·√H, hedef 1.5·stop
-  (`worker/strategies.js` mkPlan ile aynı; eşit şartlar).
+* `skor = Σ q50 / √H`. Eşik her fold'da doğrulama penceresindeki |skor| dağılımının %90'ı (test penceresine bakılmaz);
+  `skor ≥ +eşik` long, `≤ −eşik` short. Plan: ufuk H bar, stop = vol·√H, hedef 1.5·stop (mkPlan ile aynı).
+  Not (2026-09-18, duman testinden sonra, tam koşudan önce): ilk kurgu sabit 0.5 eşiğiydi; kantil kaybı medyanı
+  sıfıra yakın tuttuğu için hiç işlem üretmedi. Yüzdelik eşiğe geçildi; tam koşu bu kuralla yapılır ve sonra değişmez.
 * Girdiler: y, r1, vol, z6/z24/z120 (vol-normalize getiriler), aralık, hacim z; bilinen: saat, gün; statik: sembol.
 * Walk-forward: ısınma 365 gün, her 60 günde yeniden eğitim, kayan 540 günlük eğitim penceresi, son 30 gün
   doğrulama (erken durdurma). Ölçekleme (GroupNormalizer) yalnız eğitim setine uydurulur. Hedefi kesimden sonra

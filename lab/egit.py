@@ -5,7 +5,8 @@ Soru: "Model geçmiş desenleri öğrenince ileriyi tahmin edebilir mi?"  Cevap 
 Kurgu (önceden yazıldı, sonra değişmez):
   * Hedef: bar getirisi / önceki barın nedensel EWMA vol'u (y_t = r_t / vol_{t-1}). Karar anında y_t bilinir.
   * Model, karar barından sonraki H barın y'sini (kantil) tahmin eder. skor = Σ q50 / √H.
-  * skor ≥ +eşik → long, ≤ −eşik → short; plan ufku H bar, hedef rm·stop (diğer stratejilerle aynı mkPlan).
+  * Eşik: her fold'da, doğrulama penceresindeki |skor| dağılımının %90'ı (test penceresine bakmaz). Karar günlerinin
+    kabaca %10'u işlem üretir. skor ≥ +eşik → long, ≤ −eşik → short; plan ufku H bar, hedef rm·stop (mkPlan).
   * Walk-forward: her `adim-gun` günde bir yeniden eğit; eğitim yalnız kesim tarihinden ÖNCEKİ barlarla,
     ölçekleme yalnız eğitim penceresinden (GroupNormalizer eğitim setine uydurulur), doğrulama son 30 gün.
     Kesimden sonraki pencerede karar günde bir (00:00 UTC barı kapanışında).
@@ -20,7 +21,8 @@ Kurgu (önceden yazıldı, sonra değişmez):
 `--model naif` torch gerektirmez: aynı boru hattı, model yerine 5 günlük momentum işareti (boru hattı testi).
 """
 from __future__ import annotations
-import argparse, json, math, sys, time
+import argparse, json, math, sys, time, warnings, logging
+warnings.filterwarnings("ignore"); logging.getLogger("lightning.pytorch").setLevel(logging.ERROR)
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -76,7 +78,7 @@ def skor_naif(d_pred: pd.DataFrame, H: int, **_) -> pd.DataFrame:
     return out[["sym", "t", "time_idx", "skor"]]
 
 def skor_tft(d_train: pd.DataFrame, d_pred: pd.DataFrame, H: int, ENC: int, epochs: int,
-             parti_orani: float, val_gun: int, seed: int, log) -> pd.DataFrame:
+             parti_orani: float, val_gun: int, seed: int, esik_yuzde: float, log) -> pd.DataFrame:
     import torch, lightning.pytorch as pl
     from lightning.pytorch.callbacks import EarlyStopping
     from pytorch_forecasting import TimeSeriesDataSet, TemporalFusionTransformer
@@ -105,20 +107,24 @@ def skor_tft(d_train: pd.DataFrame, d_pred: pd.DataFrame, H: int, ENC: int, epoc
     tr.fit(model, dl_tr, dl_va)
     vl = float(tr.callback_metrics.get("val_loss", float("nan")))
     log(f"  eğitim {len(ds_tr)} örnek, doğrulama {len(ds_va)}, val_loss {vl:.4f}, epoch {tr.current_epoch}")
+    def skorla(dl):
+        pred = model.predict(dl, mode="quantiles", return_x=True, trainer_kwargs=dict(accelerator="cpu", logger=False, enable_progress_bar=False))
+        q = pred.output.detach().cpu().numpy(); dec = pred.x["decoder_time_idx"].detach().cpu().numpy()
+        grp = pred.x["groups"].detach().cpu().numpy()[:, 0]
+        sym_ad = ds_tr.get_parameters()["categorical_encoders"]["sym"].inverse_transform(grp)
+        return pd.DataFrame({"sym": sym_ad, "time_idx": dec[:, 0] - 1,
+                             "skor": q[:, :, 1].sum(axis=1) / math.sqrt(H), "yayilim": (q[:, :, 2] - q[:, :, 0]).sum(axis=1) / math.sqrt(H)})
+    # fold eşiği: doğrulama penceresindeki |skor| dağılımının yüzdeliği (test penceresine bakmaz)
+    va = skorla(dl_va)
+    esik_fold = float(np.nanquantile(va.skor.abs(), esik_yuzde / 100.0)) if len(va) else float("nan")
+    log(f"  doğrulama |skor|: medyan {va.skor.abs().median():.3f}, %90 {esik_fold:.3f}")
     # tahmin: kesimden sonraki pencere; kodlayıcı geçmişi için d_pred kesimden ENC bar önce başlar
     ilk = d_pred.attrs["ilk_karar_idx"]
     ds_pr = TimeSeriesDataSet.from_dataset(ds_tr, d_pred, min_prediction_idx=ilk + 1, stop_randomization=True)
     dl_pr = ds_pr.to_dataloader(train=False, batch_size=512, num_workers=0)
-    pred = model.predict(dl_pr, mode="quantiles", return_x=True, trainer_kwargs=dict(accelerator="cpu", logger=False, enable_progress_bar=False))
-    q = pred.output.detach().cpu().numpy()                      # (n, H, 3)
-    dec = pred.x["decoder_time_idx"].detach().cpu().numpy()     # (n, H)
-    grp = pred.x["groups"].detach().cpu().numpy()[:, 0]
-    sym_ad = ds_tr.get_parameters()["categorical_encoders"]["sym"].inverse_transform(grp)
-    skor = q[:, :, 1].sum(axis=1) / math.sqrt(H)
-    yay = (q[:, :, 2] - q[:, :, 0]).sum(axis=1) / math.sqrt(H)
-    out = pd.DataFrame({"sym": sym_ad, "time_idx": dec[:, 0] - 1, "skor": skor, "yayilim": yay})
-    out = out.merge(d_pred[["sym", "time_idx", "t"]], on=["sym", "time_idx"], how="inner")
-    return out[["sym", "t", "time_idx", "skor", "yayilim"]]
+    out = skorla(dl_pr).merge(d_pred[["sym", "time_idx", "t"]], on=["sym", "time_idx"], how="inner")
+    out["esik"] = esik_fold
+    return out[["sym", "t", "time_idx", "skor", "yayilim", "esik"]]
 
 # ---------------- walk-forward ----------------
 def calistir(a):
@@ -150,7 +156,7 @@ def calistir(a):
         T = time.time()
         log(f"kesim {fold}: {pd.to_datetime(kesim,unit='ms').date()}  eğitim {pd.to_datetime(d_tr.t.min(),unit='ms').date()}→{pd.to_datetime(d_tr.t.max(),unit='ms').date()} ({len(d_tr)} bar)  pencere → {pd.to_datetime(pen_son,unit='ms').date()}")
         if a.model == "naif": sk = skor_naif(d_pr[(d_pr.t > kesim) & (d_pr.t <= pen_son)], H)
-        else: sk = skor_tft(d_tr, d_pr, H, ENC, a.epoch, a.parti_orani, a.dogrulama_gun, a.seed + fold, log)
+        else: sk = skor_tft(d_tr, d_pr, H, ENC, a.epoch, a.parti_orani, a.dogrulama_gun, a.seed + fold, a.esik_yuzde, log)
         sk = sk[(sk.t > kesim) & (sk.t <= pen_son)]
         if not a.her_bar:                                       # günde bir karar: 00:00 UTC barı
             sk = sk[(sk.t % (GUN * MS_1H)) == 0]
@@ -160,7 +166,8 @@ def calistir(a):
         log(f"  {len(sk)} karar, {kayit[-1]['sn']} sn")
         kesim += adim
     S = pd.concat(kararlar, ignore_index=True) if kararlar else pd.DataFrame(columns=["sym","t","time_idx","skor","fold"])
-    S["side"] = np.where(S.skor >= a.esik, 1, np.where(S.skor <= -a.esik, -1, 0))
+    if "esik" not in S or S.esik.isna().all(): S["esik"] = a.esik
+    S["side"] = np.where(S.skor >= S.esik, 1, np.where(S.skor <= -S.esik, -1, 0))
     S.to_csv(CIKTI / f"{a.etiket}-skor.csv", index=False)
     P = S[S.side != 0][["t", "sym", "side"]].copy()
     P.columns = ["t0", "sym", "side"]; P["hz"] = H; P["rm"] = a.rm
@@ -176,7 +183,8 @@ if __name__ == "__main__":
     ap.add_argument("--pages", type=int, default=40); ap.add_argument("--cache", default=None)
     ap.add_argument("--ufuk", type=int, default=24, help="H: tahmin/plan ufku (bar)")
     ap.add_argument("--kodlayici", type=int, default=168, help="kodlayıcı uzunluğu (bar)")
-    ap.add_argument("--esik", type=float, default=0.5, help="|skor| eşiği (vol birimi)")
+    ap.add_argument("--esik", type=float, default=0.5, help="sabit |skor| eşiği (yalnız --model naif)")
+    ap.add_argument("--esik-yuzde", type=float, default=90, help="TFT: fold eşiği = doğrulama |skor| dağılımının bu yüzdeliği")
     ap.add_argument("--rm", type=float, default=1.5)
     ap.add_argument("--isinma-gun", type=int, default=365); ap.add_argument("--adim-gun", type=int, default=60)
     ap.add_argument("--egitim-gun", type=int, default=540, help="kayan eğitim penceresi (0 = baştan beri)")
