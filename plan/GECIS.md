@@ -25,7 +25,14 @@
   (Moskowitz–Grinblatt 1999); şimdiye kadar önerilenler içinde en sağlam olanı, çünkü desen değil belgelenmiş bir prim.
 - Evren: Binance'te işlem gören ilk ~80 coin (USDT), CoinGecko kategorisiyle 8–10 sektör (L1, L2, DeFi, AI, meme, oyun,
   altyapı/oracle, ödeme, borsa token, RWA). İki veri de ücretsiz, anahtar yok.
-- Akış ölçüsü: sektörün piyasaya göre son 2 ve 4 haftalık getirisi + hacim değişimi (eşit ağırlıklı sektör endeksi).
+- Akış ölçüleri (fiyata değil emirlere bak):
+  1. **Net taker akışı** (ana ölçü): Binance klines sütun 9 "taker buy base volume". net = 2·takerAlım − hacim, USD'ye çevir,
+     sektörde topla, son 7 günü kendi 90 günlük dağılımına göre z-skorla. 4.5 yıl geçmişi var. `veri.py` bu sütunu şu an atıyor;
+     eklenmeli (klines dizisinde k[9]).
+  2. Açık pozisyon (OI) değişimi: fapi `openInterestHist`, yalnız son 30 gün → geçmiş test yok, canlı izleme için.
+  3. Göreli getiri (2/4 hafta) + hacim payı: en zayıfı; hacim iki yönlü, göreli getiri = momentum.
+- **Omurga soru:** akış, salt fiyat momentumunun ötesinde bilgi taşıyor mu? Üç ayrı satır: yalnız göreli getiri, yalnız net
+  taker akışı, ikisi birlikte. Akış satırı momentumu geçmiyorsa "para akışı" hikâyedir; geçiyorsa gerçek bulgu.
 - Kural: haftada bir (Pazartesi 00:00 UTC), en güçlü sektörün ilk 3 coin'i long, en zayıfın ilk 3'ü short; 2 hafta tut
   (hz=336 bar), stop = vol·√hz, rm=1.5. Üç satır raporlanır: yalnız long, yalnız short, uzun-kısa. Short = vadeli, `--perp`.
 - Zayıf noktalar baştan: akış geçmiş getiri demektir (momentum), görününce kısmı olmuş olur; kripto anlatıları kısa ömürlü;
