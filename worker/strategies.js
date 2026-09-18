@@ -107,23 +107,70 @@ function addFunding(res,plans,fundingBySym){
 function runStrategy(name,rowsBySym,tf,o={}){
   const def=STRATS[name];
   let real=walkForward({rowsBySym,tf,model:name,generate:makeGenerator(name,tf,rowsBySym,{fundingBySym:o.fundingBySym}),step:o.step,warmup:o.warmup,from:o.from,to:o.to,log:o.log});
-  if(def.perp)real=addFunding(real,real.plans,o.fundingBySym);
+  return evaluate(name,real,real.plans||[],rowsBySym,o,!!def.perp);
+}
+
+/* ortak değerlendirme: gerçek sonuç + aynı plan listesinin işaret-rastgelelemesi (K kontrol) → karar */
+function evaluate(name,real,plans,rowsBySym,o,perp){
+  if(perp)real=addFunding(real,plans,o.fundingBySym);
   const done=real.rows.filter(r=>KAPANDI.has(r.state));
   const R=done.map(r=>r.R);
   const t=tStat(R),[h1,h2]=halves(done);
-  /* kontrol: gerçek plan listesi, yönler rastgele (işaret-rastgeleleme) */
-  const plans=real.plans||[];
   const K=o.controls==null?50:o.controls, ctrl=[];
   for(let k=0;k<K;k++){const rnd=seeded(1000+k);
     const flipped=plans.map(p=>rnd()<0.5?flipPlan(p):p);
     let c=backtest(flipped,rowsBySym,{});
-    if(def.perp)c=addFunding(c,flipped,o.fundingBySym);
+    if(perp)c=addFunding(c,flipped,o.fundingBySym);
     ctrl.push(c.totalR);}
   const p=K?ctrl.filter(x=>x>=real.totalR).length/K:NaN;
   const pass=done.length>=30&&t>=2.5&&h1>0&&h2>0&&(K?p<=0.02:false);
   const fundTotal=done.reduce((a,r)=>a+(r.fundR||0),0);
   return {name,n:done.length,totalR:real.totalR,fundTotal,avgR:real.avgR,t,winRate:real.winRate,profitFactor:real.profitFactor,
-          maxDrawdown:real.maxDrawdown,h1,h2,p,ctrlMean:K?ctrl.reduce((a,b)=>a+b,0)/K:NaN,ctrl,pass,anchors:real.anchors,rows:real.rows};
+          maxDrawdown:real.maxDrawdown,h1,h2,p,ctrlMean:K?ctrl.reduce((a,b)=>a+b,0)/K:NaN,ctrl,pass,anchors:real.anchors||0,rows:real.rows};
+}
+
+/* ---- dış plan listesi (Python laboratuvarı, traderpath vb. dışa aktarımlar) ----
+   CSV sütunları: t0 (ISO ya da ms), sym, side (1|-1|long|short), hz (bar), rm; isteğe bağlı sl, tp (fiyat).
+   Giriş = t0 barının kapanışı (t0 bar sınırına yuvarlanır); sl/tp yoksa stop = nedensel EWMA vol·√hz, hedef = rm·stop
+   (diğer stratejilerle aynı mkPlan). sl/tp verildiyse onlar kullanılır, rm=|ln(tp/P0)|/|ln(sl/P0)|.
+   Bar kapanışından SONRA karar verildiği varsayılır: t0 satırı, o barın kapanışında biliniyor olmalı. */
+function plansFromCsv(text,tf,rowsBySym,label){
+  const ms=TFMS[tf],disp=Object.fromEntries(ASSETS);
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const H=lines.shift().split(',').map(h=>h.trim().toLowerCase());
+  const col=n=>H.indexOf(n);
+  const need=['t0','sym','side'];for(const n of need)if(col(n)<0)throw new Error('CSV sütunu eksik: '+n);
+  const vol={},idx={};
+  for(const s in rowsBySym){vol[s]=ewmaVol(rowsBySym[s]);idx[s]=new Map(rowsBySym[s].map((b,i)=>[b.t,i]));}
+  const out=[],skip={sym:0,bar:0,vol:0};
+  for(const line of lines){
+    const c=line.split(',').map(x=>x.trim());
+    const g=n=>col(n)>=0?c[col(n)]:'';
+    const sym=g('sym').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const rows=rowsBySym[sym];if(!rows){skip.sym++;continue;}
+    const tRaw=g('t0'),T=Math.floor((/^\d+$/.test(tRaw)?+tRaw:Date.parse(tRaw))/ms)*ms;
+    const i=idx[sym].get(T);if(i==null){skip.bar++;continue;}
+    const sdRaw=g('side').toLowerCase(),side=/^(1|\+1|long|l|buy|al)$/.test(sdRaw)?1:/^(-1|short|s|sell|sat)$/.test(sdRaw)?-1:0;
+    if(!side)continue;
+    const hz=Math.max(1,Math.round(+g('hz')||24)),P0=rows[i].c;
+    const sl=+g('sl'),tp=+g('tp');
+    if(sl>0&&tp>0){
+      const dStop=Math.abs(Math.log(sl/P0)),dTgt=Math.abs(Math.log(tp/P0));
+      if(!(dStop>0)||!(dTgt>0)||Math.sign(Math.log(sl/P0))===side||Math.sign(Math.log(tp/P0))!==side){skip.vol++;continue;}
+      const rm=dTgt/dStop;
+      out.push({sym,disp:disp[sym]||sym,side,entry:P0,sl:P0*Math.exp(-side*dStop),tp1:rm>1?P0*Math.exp(side*dStop):null,
+                tp2:P0*Math.exp(side*dTgt),rm,d_stop:dStop,hz,t0:T,t_end:T+hz*ms,strat:label});
+    }else{
+      const v=vol[sym][i];if(!(v>0)){skip.vol++;continue;}
+      out.push(mkPlan(sym,disp[sym]||sym,side,P0,T,hz,ms,+g('rm')||1.5,v,label));}
+  }
+  out.sort((a,b)=>a.t0-b.t0);
+  return {plans:out,skip};
+}
+function runPlans(name,plans,rowsBySym,o={}){
+  const real=backtest(plans,rowsBySym,{});
+  real.plans=plans;
+  return evaluate(name,real,plans,rowsBySym,o,!!o.perp);
 }
 
 function compareReport(results){
@@ -140,11 +187,12 @@ function compareReport(results){
   return L.join('\n');
 }
 
-module.exports={STRATS,makeGenerator,runStrategy,compareReport,ewmaVol,mkPlan,tStat,halves};
+module.exports={STRATS,makeGenerator,runStrategy,runPlans,plansFromCsv,compareReport,ewmaVol,mkPlan,tStat,halves};
 
 /* ---- CLI ----
    node strategies.js [--tf 1h] [--pages 40] [--offline] [--step 24] [--warmup 2000]
                       [--from Y-M-D] [--to Y-M-D] [--strats a,b] [--controls 20] [--csv out.csv] */
+/* dış plan listesi: node strategies.js --plans ../lab/cikti/tft-plans.csv --offline --pages 40 [--label tft] [--perp] */
 if(require.main===module){
   (async()=>{
     const fs=require('fs');const eng=require('./engine');
@@ -160,9 +208,16 @@ if(require.main===module){
       if(has('--offline')){try{rowsBySym[sym]=JSON.parse(fs.readFileSync(eng.cacheFile(sym,tf,pages),'utf8'));}catch(e){console.error(`${disp}: önbellek yok`);}}
       else{process.stderr.write(`${disp} verisi…\n`);rowsBySym[sym]=await eng.klines(sym,tf,pages);}}
     const fundingBySym={};
-    if(names.some(n=>STRATS[n]&&STRATS[n].perp)){
+    if(opt('--plans')?has('--perp'):names.some(n=>STRATS[n]&&STRATS[n].perp)){
       for(const [sym,disp] of eng.ASSETS){const s=F.loadFunding(sym);if(s)fundingBySym[sym]=s;else console.error(`${disp}: fonlama yok (node funding.js --fetch)`);}}
     const results=[];
+    if(opt('--plans')){                       /* dış plan listesi: yalnız onu değerlendir */
+      const f=opt('--plans'),label=opt('--label',require('path').basename(f).replace(/\.csv$/i,''));
+      const {plans,skip}=plansFromCsv(fs.readFileSync(f,'utf8'),tf,rowsBySym,label);
+      process.stderr.write(`${label}: ${plans.length} plan okundu (atlanan: bilinmeyen sembol ${skip.sym}, bar yok ${skip.bar}, vol/seviye ${skip.vol})\n`);
+      const r=runPlans(label,plans,rowsBySym,{controls,perp:has('--perp'),fundingBySym});
+      process.stderr.write(`${label}: n=${r.n} toplam ${r.totalR.toFixed(2)}R t=${r.t.toFixed(2)} p=${r.p}\n`);
+      results.push(r);names.length=0;}
     for(const n of names){const T=Date.now();
       const r=runStrategy(n,rowsBySym,tf,{step,warmup,from,to,controls,fundingBySym});
       process.stderr.write(`${n}: n=${r.n} toplam ${r.totalR.toFixed(2)}R t=${r.t.toFixed(2)} p=${r.p} · ${((Date.now()-T)/1000).toFixed(0)}s\n`);
