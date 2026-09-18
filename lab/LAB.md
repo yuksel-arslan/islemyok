@@ -50,3 +50,17 @@ Süre uzun gelirse: `--egitim-gun 365 --parti-orani 0.5 --epoch 5`. Boru hattın
 * Fonlama girdisi yok (spot mum). Vadeli için `funding.js` çıktısı eklenebilir; önce temel soru cevaplansın.
 * `egit.py --model tft` bu sandbox'ta çalıştırılmadı (torch yok); `--model naif` ile boru hattı uçtan uca doğrulandı.
   İlk `--hizli` koşusunda pytorch-forecasting API hatası çıkarsa hata metnini yapıştır, düzeltilir.
+
+## Olay deneyi — H1 (zamanlama) ve H2 (yön × pozisyonlanma) · `olay.py`, `olaylar.csv`
+Kurgu ve kabul kriterleri `olay.py` başlığında, koşudan önce yazıldı:
+* H1: FOMC/TÜFE sonrası 24 saat |getiri| / plasebo (K=2000). Kabul: havuz p≤0.01 ∧ oran≥1.3. Ayrıca tepe saat medyanı.
+* H2: olay öncesi fonlama yüzdeliği ≥%90 → short, ≤%10 → long; hz=24, rm=1.5. Kabul: `olay-h2.csv` süzgeci geçer VE
+  `olay-h2-kontrol.csv` (olay dışı rastgele saatler, aynı kural) geçmez. Kontrol de geçerse bulgu olaya değil pozisyonlanmaya aittir.
+* Takvim: FOMC 2022–2026 kesin; TÜFE 2025/10 sonrası "dogrulanmadi". Yanlış tarih etkiyi seyreltir, şişirmez.
+* Sentetik doğrulama yapıldı (olay saatinde 3× oynaklık → H1 geçer; olay öncesi fonlama ucu → yalnız short). Gerçek koşu Yüksel'de.
+```
+python olay.py
+cd ..\worker
+node strategies.js --plans ..\lab\cikti\olay-h2.csv --pages 40 --label olay-h2
+node strategies.js --plans ..\lab\cikti\olay-h2-kontrol.csv --pages 40 --label olay-kontrol
+```
