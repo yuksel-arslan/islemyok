@@ -89,3 +89,30 @@ test('runStrategy uçtan uca (sentetik yükseliş): rapor üretir, kontrol dağ�
   assert.ok(r.n>0);assert.strictEqual(r.ctrl.length,3);assert.ok(isFinite(r.p));
   const rep=compareReport([r]);assert.match(rep,/tsmom20/);assert.match(rep,/GEÇTİ|kaldı/);
 });
+
+test('plansFromCsv: t0 bara yuvarlanır, giriş=kapanış, sl/tp varsa onlardan rm; bilinmeyen sembol/bar atlanır', ()=>{
+  const {plansFromCsv}=require('./strategies');
+  const rows={BTCUSDT:mk(up(300),'BTCUSDT')};
+  const csv=['t0,sym,side,hz,rm,sl,tp',
+    `${new Date(t0+200*H+1234).toISOString()},btcusdt,long,24,2,,`,       /* vol'dan */
+    `${t0+210*H},BTCUSDT,-1,12,,${up(300)[210]*1.02},${up(300)[210]*0.96}`, /* sl/tp'den: short, rm=2 */
+    `${t0+220*H},ETHUSDT,1,24,2,,`,                                          /* sembol yok */
+    `${t0+5000*H},BTCUSDT,1,24,2,,`,                                         /* bar yok */
+    `${t0+230*H},BTCUSDT,1,24,2,${up(300)[230]*1.02},${up(300)[230]*1.05}`].join('\n'); /* long ama sl üstte: geçersiz */
+  const {plans,skip}=plansFromCsv(csv,'1h',rows,'dis');
+  assert.strictEqual(plans.length,2);assert.deepStrictEqual(skip,{sym:1,bar:1,vol:1});
+  assert.strictEqual(plans[0].t0,t0+200*H);near(plans[0].entry,up(300)[200]);assert.strictEqual(plans[0].side,1);
+  near(plans[0].d_stop,ewmaVol(rows.BTCUSDT)[200]*Math.sqrt(24));assert.strictEqual(plans[0].strat,'dis');
+  assert.strictEqual(plans[1].side,-1);near(plans[1].rm,Math.log(1/0.96)/Math.log(1.02),1e-9);assert.strictEqual(plans[1].t_end,t0+222*H);
+});
+
+test('runPlans: dış plan listesi runStrategy ile aynı rapor alanlarını üretir, kontrol dağılımı dolu', ()=>{
+  const {runPlans,plansFromCsv}=require('./strategies');
+  const rows={BTCUSDT:mk(up(900),'BTCUSDT')};
+  const csv=['t0,sym,side,hz,rm',...Array.from({length:40},(_,k)=>`${t0+(100+k*15)*H},BTCUSDT,1,24,1.5`)].join('\n');
+  const {plans}=plansFromCsv(csv,'1h',rows,'x');
+  const r=runPlans('x',plans,rows,{controls:10});
+  for(const k of ['n','totalR','t','h1','h2','p','ctrl','pass','rows'])assert.ok(k in r,k);
+  assert.strictEqual(r.ctrl.length,10);assert.ok(r.n>=30);assert.ok(r.totalR>0);
+  assert.match(compareReport([r]),/^x\s+\d+/m);
+});

@@ -62,6 +62,9 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   **Karar kuralı önceden:** n≥30 ∧ t≥2.5 ∧ iki yarı>0 ∧ p_şans≤0.02 → GEÇTİ. Dakikalar sürer
   (computeCore yok). Testler: `strategies.test.js`. Fonlama primi: çevrimdışı veri yok, sonraya.
   `npm run strategies -- --tf 1h --pages 40 --offline [--strats tsmom20,donch55] [--controls 50] [--csv s.csv]`
+  **Dış plan listesi** (`--plans dosya.csv [--label ad] [--perp]`): Python laboratuvarı (`lab/`), traderpath vb.
+  dışa aktarımlar aynı süzgeçten geçer. CSV: `t0,sym,side[,hz,rm][,sl,tp]`; giriş = t0 barının kapanışı,
+  sl/tp yoksa stop = nedensel vol·√hz (mkPlan). `plansFromCsv` + `runPlans` (`evaluate` ortak gövde).
 * `funding.js` — **fonlama oranı verisi** (Binance USDⓈ-M, 8 saatlik). `--fetch` geçmişi çeker
   (`fund-<sym>.json`, artımlı), `--now` bugünkü oran/24s ort/yıllık/90g yüzdelik ve iki stratejinin
   bugünkü yönünü basar. Yardımcılar yalnız geçmişe bakar. Laboratuvarda `fund_pct` (90g yüzdelik ≥90 →

@@ -21,3 +21,12 @@ worker/.wrangler/
 !/plan/**
 !/.github/
 !/.github/**
+
+# python laboratuvarı (lab/): kod izlenir, veri/çıktı/ortam izlenmez
+!/lab/
+!/lab/**
+lab/veri/
+lab/cikti/
+lab/.venv/
+lab/lightning_logs/
+__pycache__/
