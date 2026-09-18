@@ -1,7 +1,7 @@
 """İşlem Yok laboratuvarı — saatlik mum verisi.
 
-Kaynak sırası: (1) worker önbelleği (CACHE_DIR/kl-<sym>-1h-p40.json, Node tarafıyla aynı dosya),
-(2) Binance herkese açık klines (1000 bar/sayfa, geriye doğru). Çıktı: lab/veri/<sym>-1h.csv
+Kaynak sırası: (1) worker derin önbelleği (CACHE_DIR/kl-<sym>-1h-p40.json; hacimli ve taze ise),
+(2) Binance herkese açık klines (varsayılan yol; 10 varlık × 40 sayfa ≈ 2 dk) (1000 bar/sayfa, geriye doğru). Çıktı: lab/veri/<sym>-1h.csv
 Sütunlar: t (ms, bar AÇILIŞI), o, h, l, c, v.  Node tarafında bar zamanı da açılış zamanıdır; eşleşir.
 
 python veri.py [--pages 40] [--syms BTCUSDT,ETHUSDT] [--cache DIR]
@@ -18,14 +18,13 @@ KOK = Path(__file__).resolve().parent
 VERI = KOK / "veri"
 
 def onbellekten(sym: str, pages: int, cache: str) -> pd.DataFrame | None:
-    for ad in (f"kl-{sym}-1h-p{pages}.json", f"kl-{sym}-1h.json"):
-        p = Path(cache) / ad
-        if p.exists():
-            rows = json.loads(p.read_text())
-            df = pd.DataFrame(rows)[["t","o","h","l","c"] + (["v"] if "v" in rows[0] else [])]
-            if "v" not in df: df["v"] = float("nan")
-            return df
-    return None
+    """Yalnız derin (-p<pages>) önbellek, hacim sütunu varsa ve 3 günden taze ise. Canlı kısa önbellek kullanılmaz."""
+    p = Path(cache) / f"kl-{sym}-1h-p{pages}.json"
+    if not p.exists(): return None
+    rows = json.loads(p.read_text())
+    if not rows or "v" not in rows[0]: return None
+    if rows[-1]["t"] < time.time() * 1000 - 3 * 86_400_000: return None
+    return pd.DataFrame(rows)[["t","o","h","l","c","v"]]
 
 def binance(sym: str, pages: int) -> pd.DataFrame:
     out, end = [], None
@@ -50,7 +49,10 @@ def binance(sym: str, pages: int) -> pd.DataFrame:
 def yukle(sym: str, pages: int = 40, cache: str | None = None, yenile: bool = False) -> pd.DataFrame:
     VERI.mkdir(exist_ok=True)
     f = VERI / f"{sym}-1h.csv"
-    if f.exists() and not yenile: return pd.read_csv(f)
+    if f.exists() and not yenile:
+        df = pd.read_csv(f)
+        if "v" in df and df.v.notna().any() and len(df) >= pages * 1000 * 0.8: return df
+        print(f"{sym}: eski/eksik veri dosyası, yeniden çekiliyor", file=sys.stderr)
     df = onbellekten(sym, pages, cache or os.environ.get("CACHE_DIR", "/tmp/islemyok-cache"))
     if df is None: df = binance(sym, pages)
     # boşluk kontrolü: saatlik ızgara; eksik saat varsa bildir (doldurma, model bilsin)

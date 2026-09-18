@@ -7,7 +7,8 @@ Güncelleme: 2026-09-18 · Durum: kuruldu, tam koşu Yüksel'in makinesinde bekl
 Transformer (`pytorch-forecasting`). Sonuç ne olursa olsun `site/strateji-testleri.html` tablosuna girer.
 
 ## Dosyalar
-* `veri.py` — saatlik mumlar. Önce worker önbelleği (`CACHE_DIR/kl-<sym>-1h-p40.json`), yoksa Binance.
+* `veri.py` — saatlik mumlar. Worker'ın derin önbelleği (`CACHE_DIR/kl-<sym>-1h-p40.json`) yalnız hacimli ve 3 günden
+  tazeyse kullanılır; aksi hâlde Binance'ten çekilir (~2 dk). Eski/kısa `veri/*.csv` kendiliğinden yenilenir; zorlamak: `--yenile`.
   Çıktı `veri/<sym>-1h.csv` (t = bar açılışı ms, Node ile aynı).
 * `egit.py` — özellikler (hepsi nedensel), walk-forward eğitim, karar skorları, plan CSV.
   Çıktılar `cikti/<etiket>-skor.csv` (her karar), `cikti/<etiket>-plans.csv` (eşiği geçenler),

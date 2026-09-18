@@ -42,14 +42,18 @@ def ozellikler(df: pd.DataFrame, sym: str, lam: float = 0.97) -> pd.DataFrame:
     for L in (6, 24, 120):
         d[f"z{L}"] = np.log(d.c / d.c.shift(L)) / (volp * math.sqrt(L))
     d["aralik"] = (d.h - d.l) / d.c
-    lv = np.log(d.v.replace(0, np.nan))
-    d["hacimz"] = (lv - lv.rolling(168, min_periods=48).mean()) / lv.rolling(168, min_periods=48).std()
+    if d.v.notna().sum() > 200:
+        lv = np.log(d.v.replace(0, np.nan))
+        d["hacimz"] = (lv - lv.rolling(168, min_periods=48).mean()) / lv.rolling(168, min_periods=48).std()
+    else:
+        print(f"{sym}: hacim yok, hacimz=0", file=sys.stderr); d["hacimz"] = 0.0
     ts = pd.to_datetime(d.t, unit="ms", utc=True)
     d["saat"] = ts.dt.hour.astype(str)
     d["gun"] = ts.dt.dayofweek.astype(str)
     d["time_idx"] = ((d.t - d.t.min()) // MS_1H).astype(int)
     d = d.replace([np.inf, -np.inf], np.nan)
-    d = d.dropna(subset=["y", "vol", "z120", "hacimz"]).reset_index(drop=True)
+    d["hacimz"] = d.hacimz.fillna(0.0)
+    d = d.dropna(subset=["y", "vol", "z120"]).reset_index(drop=True)
     d["hacimz"] = d.hacimz.clip(-5, 5); d["y"] = d.y.clip(-8, 8)
     for L in (6, 24, 120): d[f"z{L}"] = d[f"z{L}"].clip(-8, 8)
     return d
@@ -129,6 +133,10 @@ def calistir(a):
     if a.baslangic: kesim = max(kesim, int(pd.Timestamp(a.baslangic, tz="UTC").timestamp() * 1000))
     kararlar, kayit = [], []
     fold = 0
+    gun = lambda ms: pd.to_datetime(ms, unit="ms").date()
+    log(f"veri: {len(d)} satır, {gun(t_ilk)} → {gun(t_son)}; ilk kesim {gun(kesim)}")
+    if kesim + H * MS_1H >= t_son:
+        log("UYARI: veri, ısınma süresinden kısa; hiç kesim yok. `python veri.py --yenile` (40 sayfa ≈ 4.5 yıl) ya da --isinma-gun küçült.")
     while kesim + H * MS_1H < t_son:
         fold += 1
         if a.max_kesim and fold > a.max_kesim: break
