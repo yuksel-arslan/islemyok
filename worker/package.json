@@ -3,12 +3,26 @@
   "version": "1.1.0",
   "private": true,
   "main": "bot.js",
-  "scripts": { "start": "node bot.js", "test": "node --test", "backtest": "node backtest.js", "trackrecord": "node trackrecord.js", "strategies": "node strategies.js", "funding": "node funding.js", "kanal": "node kanal.js", "yapilandir": "node yapilandir.js" },
-  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node bot.js",
+    "test": "node --test",
+    "backtest": "node backtest.js",
+    "trackrecord": "node trackrecord.js",
+    "strategies": "node strategies.js",
+    "funding": "node funding.js",
+    "kanal": "node kanal.js",
+    "yapilandir": "node yapilandir.js",
+    "kongre": "node kongre.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.60",
     "@neondatabase/serverless": "^0.10.4",
     "aws4fetch": "^1.0.20",
-    "node-cron": "^3.0.3"
+    "fflate": "^0.8.3",
+    "node-cron": "^3.0.3",
+    "pdfjs-dist": "^4.10.38"
   }
 }

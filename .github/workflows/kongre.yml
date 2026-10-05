@@ -1,0 +1,59 @@
+# Kongre takibi backtest'i — bildirimleri (Meclis + Senato) indirir, kuralı geçmişte oynatır,
+# worker/kongre-sonuc.json'u çalıştırıldığı dala commit'ler (canlı mesajdaki backtest satırı bunu okur).
+# Elle: Actions → kongre → Run workflow. İlk koşu uzun (binlerce PDF); sonrakiler önbellekten.
+name: kongre
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Başlangıç yılı"
+        required: false
+        default: "2019"
+  schedule:
+    - cron: "17 7 1 * *"   # ayda bir: yeni kapanan işlemlerle sonucu tazele
+permissions:
+  contents: write
+concurrency: kongre
+jobs:
+  kongre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      CACHE_DIR: ${{ github.workspace }}/.kongre-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd worker && npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: .kongre-cache
+          key: kongre-${{ github.run_id }}
+          restore-keys: kongre-
+      - name: Bildirimleri indir ve ayrıştır
+        run: cd worker && node kongre.js --fetch --from ${{ github.event.inputs.from || '2019' }}
+      - name: Backtest
+        run: |
+          cd worker
+          node kongre.js --backtest --from ${{ github.event.inputs.from || '2019' }} \
+            --json kongre-sonuc.json --csv ../.kongre-cache/kongre-islemler.csv | tee ../.kongre-cache/rapor.txt
+          { echo '```'; cat ../.kongre-cache/rapor.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .kongre-cache
+          key: kongre-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kongre-sonuc
+          path: |
+            worker/kongre-sonuc.json
+            .kongre-cache/kongre-islemler.csv
+            .kongre-cache/rapor.txt
+      - name: Sonucu commit'le
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/kongre-sonuc.json
+          git diff --cached --quiet || { git commit -m "kongre: backtest sonucu ($(date -u +%F))" && git push; }

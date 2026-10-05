@@ -1,6 +1,6 @@
 # İşlem Yok — Telegram Worker
 
-Güncelleme: 2026-09-17 · Durum: v1 (günlük tarama + yayın). v1.1 planı: işlem kapanış takibi (Neon).
+Güncelleme: 2026-10-05 · Durum: v1 (günlük tarama + yayın) + Kongre takibi (`KONGRE=1`, ayrıntı `KONGRE.md`).
 
 Kaynak: <https://github.com/yuksel-arslan/islemyok> — bu klasör repo içinde `worker/`.
 
@@ -25,6 +25,13 @@ Tahmin ufku sitedekiyle aynı sabit settir: **15/30/60/120 interval** (`HZ_FIXED
 sınır 120. Ufuk gün cinsinden değil barın kendi ölçeğinde tanımlıdır.
 
 Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı önbellek).
+
+## Kongre takibi (2026-10-05)
+
+ABD Kongre üyelerinin bildirdiği hisse alışlarını izleyip aynı yönde plan üretir (bildirimden sonraki açılışta
+al, 60 işlem günü tut, SPY'ye karşı ölç). Kripto taramasından bağımsızdır; `KONGRE=1` + `DATABASE_URL` ile açılır.
+Kural, veri kaynakları, backtest ve sınırlar: **`KONGRE.md`**. Dosyalar: `kongre_veri.js`, `kongre_fiyat.js`,
+`kongre.js`, `kongre_canli.js`, `kongre.test.js`.
 
 ## Dosyalar
 
@@ -135,6 +142,8 @@ node dilimle.js            # ../site/index.html -> engine_core.js
 | `CACHE_DIR` | | `/tmp/islemyok-cache` | Kalıcı disk varsa oraya ver. |
 | `RUN_ON_START` | | `1` | Açılışta bir kez hemen koşar (ilk kurulum testi). |
 | `DRY_RUN` | | `1` | Telegram'a göndermez; konsola + `/tmp/islemyok-plan.png`. |
+| `KONGRE` | | `1` | Kongre alış takibi (`KONGRE.md`). `DATABASE_URL` gerekir. |
+| `QUIET_NO_TRADE` | | `1` | Kripto "işlem yok" mesajını gönderme. |
 
 ## Yerel test (Windows PowerShell)
 

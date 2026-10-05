@@ -12,6 +12,7 @@ const {scanMarket,planLevels,klines,passesThreshold}=require('./engine');
 const {replayPlan,netR,progress}=require('./replay');
 const DB=require('./db');
 const {exportSignals}=require('./publish');
+const {kongreGunluk}=require('./kongre_canli');
 const {createCanvas}=require('@napi-rs/canvas');
 const cron=require('node-cron');
 const fs=require('fs');
@@ -22,6 +23,7 @@ const DRY=process.env.DRY_RUN==='1';
 const TF=process.env.SCAN_TF||'1h';
 const TFMS={'1h':36e5,'4h':144e5,'1d':864e5};
 const QUIET=process.env.QUIET_NO_TRADE==='1';   /* 1: "işlem yok" mesajını hiç atma */
+const KONGRE=process.env.KONGRE==='1';          /* 1: ABD Kongresi alış takibi (kongre_canli.js) */
 
 const fmt=v=>v>=1000?Math.round(v).toLocaleString('tr-TR'):v.toPrecision(4);
 const sure=ms=>{const g=Math.floor(ms/864e5),h=Math.round(ms%864e5/36e5);
@@ -247,6 +249,11 @@ async function daily(){
 
   try{await exportSignals(await DB.recentSignals(200),await DB.runStats());}
   catch(e){console.error('  dışa aktarım hatası:',e.message);}
+
+  /* Kongre takibi: kripto akışından bağımsız; hatası kripto yayınını etkilemez */
+  if(KONGRE){
+    try{await kongreGunluk({DB,tgText,log,FOOT});}
+    catch(e){console.error('  kongre hatası:',e.message);}}
 
   if(R.fails.length)console.log('atlanan:',R.fails.join(' | '));
   console.log(`bitti · yeni ${newSigs} · kapanan ${closed} · ${((Date.now()-t0)/1000).toFixed(0)} sn`);

@@ -46,8 +46,32 @@ async function ensureSchema(){
     closed     int not null default 0,
     best_disp  text, best_ev double precision
   )`;
+  await sql`create table if not exists kongre(
+    id          text primary key,
+    ticker      text not null,
+    members     text not null,
+    filed       text not null,
+    traded      text,
+    amt_lo      double precision,
+    state       text not null default 'wait',
+    entry_d     text, entry double precision, spy_entry double precision,
+    exit_d      text, exit_px double precision, spy_exit double precision,
+    ex          double precision,
+    published_at timestamptz not null default now(),
+    msg_id      bigint
+  )`;
   return true;
 }
+
+/* ---- kongre takibi (KONGRE=1) ---- state: wait (giriş bekliyor) -> open -> closed */
+const kongreAktif=async()=>enabled?sql`select * from kongre where state<>'closed' order by filed`:[];
+const kongreVar=async id=>enabled?(await sql`select 1 from kongre where id=${id}`).length>0:false;
+async function kongreEkle(r){if(!enabled)return;
+  await sql`insert into kongre(id,ticker,members,filed,traded,amt_lo,msg_id)
+    values(${r.id},${r.ticker},${r.members},${r.filed},${r.traded||null},${r.amt_lo},${r.msg_id||null})
+    on conflict (id) do nothing`;}
+const kongreGiris=async(id,d,px,spy)=>{if(enabled)await sql`update kongre set state='open',entry_d=${d},entry=${px},spy_entry=${spy} where id=${id}`;};
+const kongreKapat=async(id,d,px,spy,ex)=>{if(enabled)await sql`update kongre set state='closed',exit_d=${d},exit_px=${px},spy_exit=${spy},ex=${ex} where id=${id}`;};
 
 const openSignals=async()=>enabled
   ? sql`select * from signals where state='open' order by published_at`
@@ -106,4 +130,5 @@ const runStats=async()=>{
 };
 
 module.exports={enabled,ensureSchema,openSignals,openFor,insertSignal,
-  closeSignal,markHalf,logRun,silentStreak,recentSignals,runStats};
+  closeSignal,markHalf,logRun,silentStreak,recentSignals,runStats,
+  kongreAktif,kongreVar,kongreEkle,kongreGiris,kongreKapat};
