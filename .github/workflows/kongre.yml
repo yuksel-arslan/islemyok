@@ -11,6 +11,9 @@ on:
         default: "2019"
   schedule:
     - cron: "17 7 1 * *"   # ayda bir: yeni kapanan işlemlerle sonucu tazele
+  push:                    # GEÇİCİ: merge öncesi gerçek veriyle doğrulama (2024'ten, kısa). Merge'de silinecek.
+    branches: [claude/optimistic-rubin-8ub650]
+    paths: ["worker/kongre*.js", ".github/workflows/kongre.yml"]
 permissions:
   contents: write
 concurrency: kongre
@@ -32,11 +35,11 @@ jobs:
           key: kongre-${{ github.run_id }}
           restore-keys: kongre-
       - name: Bildirimleri indir ve ayrıştır
-        run: cd worker && node kongre.js --fetch --from ${{ github.event.inputs.from || '2019' }}
+        run: cd worker && node kongre.js --fetch --from ${{ github.event.inputs.from || (github.event_name == 'push' && '2024') || '2019' }}
       - name: Backtest
         run: |
           cd worker
-          node kongre.js --backtest --from ${{ github.event.inputs.from || '2019' }} \
+          node kongre.js --backtest --from ${{ github.event.inputs.from || (github.event_name == 'push' && '2024') || '2019' }} \
             --json kongre-sonuc.json --csv ../.kongre-cache/kongre-islemler.csv | tee ../.kongre-cache/rapor.txt
           { echo '```'; cat ../.kongre-cache/rapor.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/cache/save@v4
