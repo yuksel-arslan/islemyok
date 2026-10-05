@@ -1,11 +1,8 @@
-# TDI testi — Binance 1h ve 4h, 10 varlık, 40k bar, laboratuvar karar kuralı (worker/tdi.js başlığı).
+# TDI testi — Binance 1h, 10 varlık, 40k bar, laboratuvar karar kuralı (worker/tdi.js başlığı).
 # Elle: Actions → tdi → Run workflow. Sonuç: adım özeti + artifact.
 name: tdi
 on:
   workflow_dispatch:
-  push:                    # GEÇİCİ: merge öncesi koşu. Merge'de silinecek.
-    branches: [claude/optimistic-rubin-8ub650]
-    paths: ["worker/tdi.js", ".github/workflows/tdi.yml"]
 permissions:
   contents: read
 concurrency: tdi
@@ -27,9 +24,10 @@ jobs:
           key: kl-${{ github.run_id }}
           restore-keys: kl-
       - name: TDI 1h
-        run: cd worker && node tdi.js --tf 1h --pages 40 --controls 50 --csv ../.kl-cache/tdi-1h.csv | tee ../.kl-cache/tdi-1h.txt
-      - name: TDI 4h
-        run: cd worker && node tdi.js --tf 4h --pages 40 --controls 50 --csv ../.kl-cache/tdi-4h.csv | tee ../.kl-cache/tdi-4h.txt
+        run: |
+          set -o pipefail
+          mkdir -p .kl-cache
+          cd worker && node tdi.js --tf 1h --pages 40 --controls 50 --csv ../.kl-cache/tdi-1h.csv | tee ../.kl-cache/tdi-1h.txt
       - name: Özet
         if: always()
         run: '{ echo "\`\`\`"; cat .kl-cache/tdi-*.txt; echo "\`\`\`"; } >> "$GITHUB_STEP_SUMMARY"'
@@ -43,3 +41,4 @@ jobs:
         with:
           name: tdi-sonuc
           path: .kl-cache/tdi-*
+          include-hidden-files: true

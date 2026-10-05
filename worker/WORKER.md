@@ -189,6 +189,7 @@ tahmininden komisyon (22bp) sonrası kenar çıkmıyor.**
 | donch20 / donch55 | 155 / 96 | ≈ 0 |
 | revert3 | 288 | −36R, t=−2.5, şanstan kötü (p=0.88) |
 | xsmom30 | 2368 | −58R, şans −51 |
+| TDI 1h (2026-10-05) — `tdi` / `tdi_x` | 13664 / 25666 | −865R (t=−9.6, iki yarı −) / −834R (t=−21); yön şanstan ~+0.01R/işlem iyi, 22bp komisyon ~0.07R yiyor. Kaldı |
 
 Teşhis: `evalCombo` simülasyon başlangıcını tüm geçmişten rastgele seçer; yön bilgisi yalnız geçmiş
 ortalama sürüklenme. Kapılar doğru kalibre (ev − eşik ≈ gerçekleşen). Sorun kapılarda değil, sinyal
