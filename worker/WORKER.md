@@ -72,6 +72,11 @@ Kural, veri kaynakları, backtest ve sınırlar: **`KONGRE.md`**. Dosyalar: `kon
   **Dış plan listesi** (`--plans dosya.csv [--label ad] [--perp]`): Python laboratuvarı (`lab/`), traderpath vb.
   dışa aktarımlar aynı süzgeçten geçer. CSV: `t0,sym,side[,hz,rm][,sl,tp]`; giriş = t0 barının kapanışı,
   sl/tp yoksa stop = nedensel vol·√hz (mkPlan). `plansFromCsv` + `runPlans` (`evaluate` ortak gövde).
+* `tdi.js` — **TDI (Traders Dynamic Index) testi**. RSI(13) → yeşil SMA2, kırmızı SMA7, taban SMA34. Kural önceden
+  sabit: yeşil kırmızıyı yukarı keser ∧ taban ve 50 üstü → long (ayna short). `tdi`: ortak makine (1 gün, 1σ stop, 1.5R);
+  `tdi_x`: ters kesişmede çık (≤5 gün). Planlar nedensel göstergeden doğrudan üretilir (her bar), `runPlans` ile aynı
+  oynatma/maliyet/işaret-rastgeleleme ve karar kuralı. Testler: `tdi.test.js`. Actions: `tdi.yml`.
+  `node tdi.js --tf 1h|4h --pages 40 [--offline] [--controls 50] [--csv out.csv]`
 * `funding.js` — **fonlama oranı verisi** (Binance USDⓈ-M, 8 saatlik). `--fetch` geçmişi çeker
   (`fund-<sym>.json`, artımlı), `--now` bugünkü oran/24s ort/yıllık/90g yüzdelik ve iki stratejinin
   bugünkü yönünü basar. Yardımcılar yalnız geçmişe bakar. Laboratuvarda `fund_pct` (90g yüzdelik ≥90 →
