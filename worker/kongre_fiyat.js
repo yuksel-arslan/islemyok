@@ -50,4 +50,8 @@ function firstAfter(b,d){let lo=0,hi=b.length-1,ans=-1;
 function lastOnOrBefore(b,d){let lo=0,hi=b.length-1,ans=-1;
   while(lo<=hi){const m=(lo+hi)>>1;if(b[m].d<=d){ans=m;lo=m+1;}else hi=m-1;}return ans;}
 
-module.exports={bars,firstAfter,lastOnOrBefore};
+/* d tarihine eşit ya da sonraki ilk bar */
+function firstOnOrAfter(b,d){let lo=0,hi=b.length-1,ans=-1;
+  while(lo<=hi){const m=(lo+hi)>>1;if(b[m].d>=d){ans=m;hi=m-1;}else lo=m+1;}return ans;}
+
+module.exports={bars,firstAfter,lastOnOrBefore,firstOnOrAfter};

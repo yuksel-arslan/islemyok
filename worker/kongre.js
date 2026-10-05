@@ -7,7 +7,7 @@
 
    CLI:
      node kongre.js --fetch [--from 2019]           bildirimleri indir/ayrıştır (önbellek), sağlık raporu
-     node kongre.js --backtest [--from 2019] [--json kongre-sonuc.json] [--csv k.csv] [--controls 200]
+     node kongre.js --backtest [--from 2019] [--json kongre-sonuc.json] [--csv k.csv] [--controls 200] [--karsilastir]
      node kongre.js --now [--days 7]                son bildirimlerden çıkan sinyaller (yayın yok) */
 'use strict';
 const fs=require('fs'),path=require('path');
@@ -92,6 +92,25 @@ function rapor(trades,ctrl,k=KURAL){
     ilk:trades[0]?.giris||null,son:trades[n-1]?.cikis||null};
 }
 
+/* TEŞHİS (canlıda kullanılamaz): aynı işlemler politikacının İŞLEM günü kapanışından girilseydi.
+   Ayrıca işlem günü → bizim girişimiz arasında SPY'ye göre kaçan getiri ("gecikme payı").
+   Bu modda o gün bilinmeyen bilgi kullanılır; yalnız kazancın gecikmeye gidip gitmediğini ölçer. */
+function islemTarihli(trades,barsOf,spy,k=KURAL){
+  const out=[];
+  for(const t of trades){
+    if(!t.traded||t.traded>t.filed)continue;
+    const b=barsOf(t.ticker),i=PX.firstOnOrAfter(b,t.traded);
+    if(i<0||b[i].d>=t.giris)continue;                 /* işlem günü barı bizim girişten önce olmalı */
+    const j=i+k.tutus-1;if(j>=b.length)continue;
+    const si=PX.firstOnOrAfter(spy,t.traded),sj=PX.lastOnOrBefore(spy,b[j].d);
+    const se=PX.firstAfter(spy,t.filed);
+    if(si<0||sj<=si||se<0)continue;
+    const ret=Math.log(b[j].c/b[i].c)-k.maliyet,sret=Math.log(spy[sj].c/spy[si].c);
+    const gecik=Math.log(t.px0/b[i].c)-Math.log(spy[se].o/spy[si].c);
+    out.push({...t,giris:b[i].d,cikis:b[j].d,ret,sret,ex:ret-sret,gecik,gun:Math.round((Date.parse(t.filed)-Date.parse(t.traded))/864e5)});}
+  return out;
+}
+
 const pct=x=>(x>=0?'+':'−')+'%'+Math.abs((Math.exp(x)-1)*100).toFixed(2);
 
 /* ---- sonucun tek satırlık özeti (mesajlar için) ---- */
@@ -144,9 +163,23 @@ async function cli(){
     console.log(`n=${r.n}  ort.getiri ${pct(r.ortRet)}  SPY ${pct(r.ortSpy)}  fark ${pct(r.ortEx)}  kazanma %${(r.kazanma*100).toFixed(0)}`);
     console.log(`t(aylık küme)=${r.t.toFixed(2)}  yarılar ${pct(r.yari1)} / ${pct(r.yari2)}  maymun ort ${pct(r.maymunOrt)}  p_şans=${r.pSans.toFixed(3)}`);
     console.log(`KARAR: ${r.karar}  (kural: n≥${KURAL.karar.n} ∧ t≥${KURAL.karar.t} ∧ iki yarı>0 ∧ p≤${KURAL.karar.p})`);
+    let kars=null;
+    if(a.includes('--karsilastir')){
+      const it=islemTarihli(trades,barsOf,spy);
+      const ids=new Set(it.map(x=>x.id)),ayni=trades.filter(x=>ids.has(x.id));
+      const ri=rapor(it,[]),rb=rapor(ayni,[]);
+      const gun=it.map(x=>x.gun).sort((a,b)=>a-b);
+      kars={n:it.length,medyanGecikmeGun:gun[Math.floor(gun.length/2)]||null,
+        islemTarihli:{ortEx:ri.ortEx,t:ri.t,yari1:ri.yari1,yari2:ri.yari2,kazanma:ri.kazanma},
+        bildirimTarihli:{ortEx:rb.ortEx,t:rb.t,yari1:rb.yari1,yari2:rb.yari2,kazanma:rb.kazanma},
+        gecikmePayi:mean(it.map(x=>x.gecik))};
+      console.log(`\nKARŞILAŞTIRMA (aynı ${it.length} işlem, medyan gecikme ${kars.medyanGecikmeGun} gün) — işlem tarihi canlıda KULLANILAMAZ, yalnız teşhis`);
+      console.log(`işlem günü kapanışından  : fark ${pct(ri.ortEx)}/işlem  t=${ri.t.toFixed(2)}  yarılar ${pct(ri.yari1)} / ${pct(ri.yari2)}  kazanma %${(ri.kazanma*100).toFixed(0)}`);
+      console.log(`bildirimden sonra (gerçek): fark ${pct(rb.ortEx)}/işlem  t=${rb.t.toFixed(2)}  yarılar ${pct(rb.yari1)} / ${pct(rb.yari2)}  kazanma %${(rb.kazanma*100).toFixed(0)}`);
+      console.log(`işlem günü → bizim giriş arası SPY'ye göre ort: ${pct(kars.gecikmePayi)} (gecikmede kaçan/kurtulan)`);}
     const out=opt('--json');
     if(out)fs.writeFileSync(out,JSON.stringify({tarih:new Date().toISOString().slice(0,10),kural:KURAL,
-      fiyatYok:miss,hisse:tickers.length,sonuc:r},null,1)+'\n');
+      fiyatYok:miss,hisse:tickers.length,sonuc:r,...(kars?{karsilastirma:kars}:{})},null,1)+'\n');
     const csv=opt('--csv');
     if(csv)fs.writeFileSync(csv,'ticker,bildirim,islem,giris,cikis,uye,ret,spy,ex\n'+
       trades.map(t=>[t.ticker,t.filed,t.traded,t.giris,t.cikis,'"'+t.members.join('; ')+'"',t.ret.toFixed(5),t.sret.toFixed(5),t.ex.toFixed(5)].join(',')).join('\n')+'\n');
@@ -161,5 +194,5 @@ async function cli(){
   }
 }
 
-module.exports={KURAL,olaylar,oynat,maymun,rapor,tAylik,sonucOzet,pct,SONUC};
+module.exports={KURAL,olaylar,oynat,islemTarihli,maymun,rapor,tAylik,sonucOzet,pct,SONUC};
 if(require.main===module)cli().catch(e=>{console.error(e.message||e);process.exit(1);});

@@ -40,7 +40,7 @@ jobs:
         run: |
           cd worker
           node kongre.js --backtest --from ${{ github.event.inputs.from || (github.event_name == 'push' && '2024') || '2019' }} \
-            --json kongre-sonuc.json --csv ../.kongre-cache/kongre-islemler.csv | tee ../.kongre-cache/rapor.txt
+            --karsilastir --json kongre-sonuc.json --csv ../.kongre-cache/kongre-islemler.csv | tee ../.kongre-cache/rapor.txt
           { echo '```'; cat ../.kongre-cache/rapor.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/cache/save@v4
         if: always()

@@ -143,3 +143,15 @@ test('yeni mesaj: gecikme ve backtest satırı (sonuç dosyası yoksa dürüstç
   assert.match(m,/NVDA/);assert.match(m,/8 gün gecikme/);assert.match(m,/AL/);
   if(!fs.existsSync(K.SONUC))assert.match(m,/Backtest henüz koşmadı/);
 });
+
+test('işlem tarihli teşhis: giriş işlem günü kapanışı; gecikme payı = işlem günü → bizim giriş', ()=>{
+  const b=seri('2024-01-08',40,i=>100+i), spy=seri('2024-01-08',40,()=>400);
+  const tr=K.oynat(K.olaylar([T({traded:'2024-01-08',filed:'2024-01-10'})]),()=>b,spy,k5);
+  const it=K.islemTarihli(tr,()=>b,spy,k5);
+  assert.strictEqual(it.length,1);const x=it[0];
+  assert.strictEqual(x.giris,'2024-01-08');assert.strictEqual(x.cikis,b[4].d);assert.strictEqual(x.gun,2);
+  assert.ok(Math.abs(x.ret-(Math.log(b[4].c/b[0].c)-0.001))<1e-12);
+  assert.ok(Math.abs(x.gecik-(Math.log(b[3].o/b[0].c)-Math.log(400/(400*1.001))))<1e-12);
+  /* işlem tarihi yoksa ya da bildirimden sonraysa dışarıda */
+  assert.strictEqual(K.islemTarihli([{...tr[0],traded:null}],()=>b,spy,k5).length,0);
+});
