@@ -364,6 +364,7 @@ button:not(.go):hover{border-color:var(--ink)}
     </div>
     <div class="hcap"><span>canlı veriden çizildi</span><span>her şey tarayıcında hesaplanır</span></div>
   </div>
+  <div class="verdict hide" id="olayUyari" role="note" style="margin-top:0"></div>
   <h1>Sinyal değil,<br><em>kanıt.</em></h1>
       <p class="lede">Başkaları "işte sinyal" der. Biz o sinyalin işe yarayıp yaramadığını test ederiz: <a href="/strateji-testleri.html" style="color:var(--b)"><strong>10 popüler strateji ve 4 Telegram sinyal kanalı, şans kontrollü — sıfırı geçti.</strong></a> Bu yüzden çoğu gün cevabımız: <strong>işlem yok.</strong> Sana bir sinyal geldiyse: <a href="/sinyal-test.html" style="color:var(--b)"><strong>açmadan önce test et.</strong></a> Eşiği geçen gün planı kanıtıyla çizeriz — giriş, SL, TP1, TP2, tahmini süre.</p>
       <p class="lede" style="margin-top:10px">Varlık ve zaman aralığı seç, Hesapla'ya bas — ya da tek tıkla piyasayı tara. Günlük otomatik tarama Telegram'da: <a href="https://t.me/islemyok" target="_blank" rel="noopener" style="color:var(--b)">t.me/islemyok</a> · X: <a href="https://x.com/islemyok" target="_blank" rel="noopener" style="color:var(--b)">@islemyok</a>. Yatırım tavsiyesi değildir.</p>
@@ -2845,6 +2846,17 @@ addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('
 }catch(e){}})();
 
 ready=true;
+</script>
+<script>
+/* olay uyarısı: site/olaylar.json (lab/olaylar.csv'den üretilir). Yön önermez, yalnız oynaklık uyarısı. */
+fetch('/olaylar.json').then(r=>r.json()).then(ev=>{
+  const u=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10),bugun=u(0),yarin=u(1);
+  const e=ev.find(x=>x.d===bugun)||ev.find(x=>x.d===yarin);if(!e)return;
+  const gun=e.d===bugun?'bugün':'yarın',tr=e.h.replace(/^(\d{2})/,(a)=>String((+a+3)%24).padStart(2,'0'));
+  const el=document.getElementById('olayUyari');
+  el.innerHTML='<h3>'+e.t+' günü ('+gun+', '+tr+' TSİ)</h3><p style="margin:0">Hareket normalin ~1.5 katı, en çok ilk 2 saatte; sıkı stop taşıma. Bu yön değil zamanlama uyarısıdır. <a href="/strateji-testleri.html#olay-takvimi" style="color:var(--b)">Kanıt</a>'+(e.dogrulandi?'':' · tarih doğrulanmadı')+'</p>';
+  el.classList.remove('hide');
+}).catch(()=>{});
 </script>
 <script src="/yapilandirma.js"></script>
 <script src="/gelir.js"></script>

@@ -35,3 +35,9 @@ Kendin test et: islemyok.com/sinyal-test.html
 4/ Mesajların %29'u silinmiş. Kaybedenler nereye gitti?
 5/ Sıkı sayım — giriş dolmalı, yarı kapatma yok: %49. Yazı-tura.
 6/ Bunu her kanal için 2 dakikada yapabilirsin: islemyok.com/sinyal-test.html
+
+## Olay takvimi — 2026-41 (ilk geçen test)
+10 kural ve 5 kanal geçmedi. İlk geçen şey bir olay takvimi. 📅
+FOMC ve TÜFE sonrası 24 saatte hareket, plasebo saatlerin 1.45 katı (91 olay, 10 varlık, p<0.001). En büyük hareket medyanda olaydan 2 saat sonra.
+Yön? Onu bulamadık: olay öncesi fonlama ucu yönü öngörmedi, olay dışı kontrol de aynı. Zamanlama var, yön yok.
+Sinyal değil, kanıt: islemyok.com/strateji-testleri.html#olay-takvimi

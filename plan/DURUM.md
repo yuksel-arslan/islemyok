@@ -1,6 +1,6 @@
 # Durum — haftalık güncellenir (ajan)
 
-Son güncelleme: 2026-09-17 (ilk GitHub Actions koşusu · ajan turu 2026-38)
+Son güncelleme: 2026-10-05 (ajan turu 2026-41)
 
 ## Açık adım
 **1 + 2 (referans linki + reklam yerleşimi)** — Binance referansı yayında; AdSense kimliği girildi, site onayı bekleniyor (2026-09-18). OKX TR referans programı yok, boş kalır.
@@ -37,7 +37,17 @@ Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd wo
   <https://github.com/yuksel-arslan/islemyok/pull/new/claude/ajan-2026-38>. Ayar açılırsa sonraki koşularda
   ajan PR'ı kendi açar.
 
-## Ajan için bekleyen iş (2026-09-18, Yüksel onayladı): olay deneyi sonucunu siteye işle
+## Ajan turu 2026-41 (5 Eki)
+- kart: yeni aday yok. Ağ açık (`--discover` 403 vermedi); eşiği geçen tek iki kanal (`crypto_trading_club` 115, `cryptosignals0rg` 27 sinyal)
+  geçen hafta zaten kullanıldı, 7 yeni tohum (binancekillers, fatpigsignals, universalcryptosignals…) ≤2 sinyal → kart atlandı, uydurma yok.
+  Yeni tohum gerekirse: kanalların birbirine verdiği bağlantılar tükendi; elle bulunan herkese açık kanal adı eklenebilir.
+- Olay deneyi siteye işlendi: `strateji-testleri.html` yeni bölüm + H2 satırı, ana sayfada olay uyarısı (`site/olaylar.json`,
+  `npm run olaylar` ile `lab/olaylar.csv`'den üretilir, testli), X metni `plan/materyal/x-metinleri.md`. Testler 81/81.
+- Açık: `lab/olaylar.csv` 2026-09-11'de bitiyor; sonraki FOMC/TÜFE tarihleri eklenmeden uyarı çıkmaz (tarih uydurmadım).
+  CSV'de 11 TÜFE satırı "dogrulanmadi"; sayfada "tarih doğrulanmadı" ibaresiyle gösterilir.
+- PR: aşağıda bağlantı.
+
+## Ajan için bekleyen iş (2026-09-18, Yüksel onayladı): olay deneyi sonucunu siteye işle — YAPILDI (2026-41)
 Laboratuvar sonucu (`lab/olay.py`, kurgu ve kabul `lab/LAB.md`, ham çıktı Yüksel'in makinesinde `lab/cikti/olay-h1.txt`):
 - H1 zamanlama GEÇTİ: FOMC+TÜFE sonrası 24 saatte |getiri| plasebonun 1.45 katı (p=0.000, 91 olay, 10 varlık, 2022–2026);
   yalnız FOMC 1.67 (p=0.000); yalnız TÜFE 1.30 (p=0.009, sınırda). En büyük saatlik hareket medyanda olaydan 2 saat sonra (q75: 9).

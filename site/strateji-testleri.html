@@ -116,6 +116,7 @@ td .mu{font-size:11.5px}
 <tr><td><b>Kesitsel momentum</b><br><span class="mu">30g getiri: ilk 3 al, son 3 sat</span></td><td>2368</td><td>−58.0</td><td>−0.02</td><td>−1.42</td><td>49%</td><td><span class="bad">kaldı</span></td><td class="mu"></td></tr>
 <tr><td><b>Fonlama carry (yüzdelik)</b><br><span class="mu">90g yüzdelik ≥90 → short, ≤10 → long</span></td><td>1987</td><td>−43.6</td><td>−0.02</td><td>−1.22</td><td>51%</td><td><span class="bad">kaldı</span></td><td class="mu">fonlama +10.8R alındı, fiyat −54.4R</td></tr>
 <tr><td><b>Fonlama carry (mutlak)</b><br><span class="mu">24s ort ≥ %0.03/8s → short</span></td><td>283</td><td>+4.0</td><td>+0.01</td><td>+0.29</td><td>53%</td><td><span class="bad">kaldı</span></td><td class="mu">fonlama +9.7R alındı, fiyat −5.8R</td></tr>
+<tr><td><b>Olay yönü × pozisyonlanma</b><br><span class="mu">FOMC/TÜFE öncesi fonlama ucu → karşı yön, 24 saat</span></td><td>202</td><td>−7.25</td><td>−0.04</td><td>−0.55</td><td>—</td><td><span class="bad">kaldı</span></td><td class="mu">p_şans=0.26. Olay dışı kontrol de kaldı (n=224, +0.65R, t=0.06): yön öngörülemez</td></tr>
 </tbody></table>
 <p class="note" style="margin-top:10px">R = riske göre sonuç: −1 stop, +2 hedef gibi. İsabet %43–53 = yazı-tura. "Şans" = aynı giriş anları, rastgele yön, 50 tekrar; p_şans = rastgelenin gerçeği geçme oranı.</p>
 
@@ -135,6 +136,20 @@ td .mu{font-size:11.5px}
 <p class="note" style="margin-top:10px">Kanal adları bilinçli olarak yazılmadı; amaç kanal yakalamak değil, yöntemi göstermek. Kod açık; aynı komutla herhangi bir herkese açık kanalı kendin test edebilirsin. "Mesaj silinmiş" = kanalın mesaj numaralarındaki boşluk oranı; kaybedenleri silen kanalın izi.</p>
 <div class="verdict"><h3>%79 isabet nasıl %49 olur</h3>
 <p>Üç yolla: (1) <strong>dolmayan limit emri</strong> — fiyat girişe hiç gelmez, hedefe gider, kanal "kazandı" yazar; sen o işlemde değildin. (2) <strong>ilk hedefte yarı kapatma</strong> — küçük kâr "isabet" sayılır, kalan yarı stop'a gider. (3) <strong>silinen sinyaller</strong> — Kanal A, B ve E'de mesajların dörtte biri civarı yok. Bu üçü olmadan hesaplanınca beş kanaldan hiçbiri yazı-turayı yenemedi; biri (B) yazı-turadan kötü.</p></div>
+
+<h2 id="olay-takvimi">Olay takvimi: rüzgâr ne zaman çıkar</h2>
+<div class="sub">İlk geçen test · yön değil, zamanlama · 91 olay, 10 varlık, 2022–2026</div>
+<p>Önceki her testte soru "hangi yöne?" idi ve cevap hep yazı-turaydı. Bu kez farklı bir soru sorduk: <strong>hareketin büyüklüğü olay saatlerinde gerçekten farklı mı?</strong> FOMC faiz kararı ve ABD TÜFE açıklaması sonrası 24 saatte mutlak getiriyi, aynı saatlere denk gelmeyen rastgele plasebo anlarıyla (2000 tekrar) karşılaştırdık. Kural koşudan önce yazıldı.</p>
+<table>
+<thead><tr><th>Olay</th><th>Hareket / plasebo</th><th>p</th><th>Karar</th></tr></thead>
+<tbody>
+<tr><td><b>FOMC + TÜFE</b></td><td>1.45×</td><td>0.000</td><td><span class="ok">geçti</span></td></tr>
+<tr><td>Yalnız FOMC</td><td>1.67×</td><td>0.000</td><td><span class="ok">geçti</span></td></tr>
+<tr><td>Yalnız TÜFE</td><td>1.30×</td><td>0.009</td><td class="mu">sınırda</td></tr>
+</tbody></table>
+<p class="note" style="margin-top:10px">En büyük saatlik hareket medyanda olaydan 2 saat sonra geliyor (üst çeyrek: 9 saat). Plasebo: aynı varlık ve ufuk, olay olmayan rastgele saatler.</p>
+<div class="verdict"><h3>Zamanlama var, yön yok</h3>
+<p>Olay günlerinde fiyat normalden yaklaşık bir buçuk kat fazla oynuyor, özellikle ilk saatlerde. Ama <strong>hangi yöne</strong> oynayacağını bildiren bir şey bulamadık: olay öncesi fonlama ucunu karşı yönde oynamak da tuttu sayılmaz (yukarıdaki tabloda "kaldı"), olay dışı kontrol de aynı sonucu verdi. Bu bir sinyal değil, bir uyarı: olay günü stop mesafen ve pozisyon büyüklüğün normal günkü varsayımla uyuşmuyor olabilir. "FOMC'de al/sat" demiyoruz.</p></div>
 
 <h2>Nasıl test ettik</h2>
 <p><strong>Walk-forward, ileri bakma yok.</strong> Her hafta (model için) ya da her gün (kurallar için) yalnız o güne kadar bilinen barlarla karar verilir; plan sonra ileriye oynatılır. Gelecek hiçbir hesaba girmez.</p>
