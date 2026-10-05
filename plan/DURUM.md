@@ -45,7 +45,7 @@ Aşağıdaki satırları doldur, commit'le (ya da buraya yaz, ajan alır; `cd wo
   `npm run olaylar` ile `lab/olaylar.csv`'den üretilir, testli), X metni `plan/materyal/x-metinleri.md`. Testler 81/81.
 - Açık: `lab/olaylar.csv` 2026-09-11'de bitiyor; sonraki FOMC/TÜFE tarihleri eklenmeden uyarı çıkmaz (tarih uydurmadım).
   CSV'de 11 TÜFE satırı "dogrulanmadi"; sayfada "tarih doğrulanmadı" ibaresiyle gösterilir.
-- PR: aşağıda bağlantı.
+- PR: https://github.com/yuksel-arslan/islemyok/pull/21 (merge bekliyor)
 
 ## Ajan için bekleyen iş (2026-09-18, Yüksel onayladı): olay deneyi sonucunu siteye işle — YAPILDI (2026-41)
 Laboratuvar sonucu (`lab/olay.py`, kurgu ve kabul `lab/LAB.md`, ham çıktı Yüksel'in makinesinde `lab/cikti/olay-h1.txt`):
