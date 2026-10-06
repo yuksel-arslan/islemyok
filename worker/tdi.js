@@ -15,7 +15,8 @@
 
    CLI:
      node tdi.js --sentetik [--seed 7]           # gürültü / zayıf trend / güçlü trend senaryoları
-     node tdi.js --offline --pages 40 [--tf 1h]  # gerçek veri (CACHE_DIR önbelleği)            */
+     node tdi.js --offline --pages 40 [--tf 1h]  # gerçek veri (CACHE_DIR önbelleği)
+     --syms BTCUSDT                              # varlık alt kümesi (varsayılan: 10 varlık)      */
 'use strict';
 const {mkPlan,ewmaVol,runPlans,compareReport}=require('./strategies');
 const {TFMS}=require('./backtest');
@@ -109,6 +110,8 @@ if(require.main===module){
     const fs=require('fs'),eng=require('./engine'),{runStrategy}=require('./strategies');
     const a=process.argv.slice(2),opt=(k,d)=>{const i=a.indexOf(k);return i>=0?a[i+1]:d;},has=k=>a.includes(k);
     const tf=opt('--tf','1h'),controls=+opt('--controls',50);
+    const syms=opt('--syms')?opt('--syms').toUpperCase().split(','):null;
+    const pick=rows=>syms?Object.fromEntries(Object.entries(rows).filter(([s])=>syms.includes(s))):rows;
     const names=Object.keys(RULES),bench=['donch20','tsmom20'];
     const run=(rows,title)=>{const res=[];
       for(const n of names)res.push(runTdi(n,rows,tf,{controls}));
@@ -117,12 +120,13 @@ if(require.main===module){
     if(has('--sentetik')){
       const {senaryo}=require('./sentetik'),seed=+opt('--seed',7),N=+opt('--bars',40000);
       for(const [title,drift] of [['Gürültü (trend yok)',0],['Zayıf trend rejimleri (±%0.5/gün)',0.005],['Güçlü trend rejimleri (±%1.5/gün)',0.015]])
-        run(senaryo({seed,bars:N,driftPerDay:drift,tf}),title+` · ${N} bar ${tf} × 10 varlık`);
+      {const rows=pick(senaryo({seed,bars:N,driftPerDay:drift,tf}));
+        run(rows,title+` · ${N} bar ${tf} × ${Object.keys(rows).length} varlık`);}
       return;}
     const pages=opt('--pages')?+opt('--pages'):undefined,rows={};
-    for(const [sym,disp] of eng.ASSETS){
+    for(const [sym,disp] of eng.ASSETS.filter(([s])=>!syms||syms.includes(s))){
       if(has('--offline')){try{rows[sym]=JSON.parse(fs.readFileSync(eng.cacheFile(sym,tf,pages),'utf8'));}catch(e){console.error(`${disp}: önbellek yok`);}}
       else{process.stderr.write(`${disp} verisi…\n`);rows[sym]=await eng.klines(sym,tf,pages);}}
-    run(rows,`Gerçek veri ${tf}`);
+    run(rows,`Gerçek veri ${tf} · ${Object.keys(rows).join(',')} · ${Object.values(rows).map(r=>r.length+' bar, '+new Date(r[0].t).toISOString().slice(0,10)+' → '+new Date(r[r.length-1].t).toISOString().slice(0,10)).join(' | ')}`);
   })().catch(e=>{console.error(e.stack||e.message||e);process.exit(1);});
 }

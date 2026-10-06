@@ -1,5 +1,5 @@
 # Laboratuvar — strateji testlerini gerçek Binance verisiyle koşturur (bulut oturumunda Binance kapalı).
-# Elle: gh workflow run lab.yml -f komut="node tdi.js --pages 40"
+# Elle: gh workflow run lab.yml -f komut="node tdi.js --pages 40 --syms BTCUSDT"
 # Sonuç: koşunun Summary sekmesi + 'lab-sonuc' artifact'ı.
 name: lab
 on:
@@ -11,7 +11,7 @@ on:
       komut:
         description: "worker/ içinde çalışacak komut"
         required: false
-        default: "node tdi.js --pages 40"
+        default: "node tdi.js --pages 40 --syms BTCUSDT"
 permissions:
   contents: read
 concurrency:
@@ -35,7 +35,7 @@ jobs:
       - name: Koşu
         run: |
           set -o pipefail
-          ${{ github.event.inputs.komut || 'node tdi.js --pages 40' }} 2>&1 | tee sonuc.txt
+          ${{ github.event.inputs.komut || 'node tdi.js --pages 40 --syms BTCUSDT' }} 2>&1 | tee sonuc.txt
       - name: Özet
         if: always()
         run: |
