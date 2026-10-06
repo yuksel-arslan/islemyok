@@ -1,11 +1,9 @@
 # Laboratuvar — strateji testlerini gerçek Binance verisiyle koşturur (bulut oturumunda Binance kapalı).
+# Yalnız elle tetiklenir (Actions dakikası ücretli).
 # Elle: gh workflow run lab.yml -f komut="node tdi.js --pages 40 --syms BTCUSDT"
 # Sonuç: koşunun Summary sekmesi + 'lab-sonuc' artifact'ı.
 name: lab
 on:
-  push:
-    branches: ["claude/**"]
-    paths: ["worker/tdi.js", ".github/workflows/lab.yml"]
   workflow_dispatch:
     inputs:
       komut:
