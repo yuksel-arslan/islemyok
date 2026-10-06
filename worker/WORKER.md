@@ -106,6 +106,16 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   değişmez. `scanCores/scanRows` isteğe bağlı `evaluator` alır (canlı `scanMarket` geçmez).
   Sınama: `npm run backtest -- --model cond ...` aynı çapalarda base ile A/B. Karar kuralı önceden:
   gerçek planlarda ort. R > 0 ve t ≥ 2 yoksa fikir ölür; varsa `index.html`'e taşınır.
+* `tdi.js` — **BTMM|TDI göstergesi testi** (TradingView, The_Trading_Jedi). Pine hesaplarının
+  nedensel kopyası: RSI21 (Wilder), TL=SMA7, BL=SMA34, MZL (DEMA12−DEMA26), EMA 13/50/200/800 skoru,
+  3× zaman dilimi eğilimi (yalnız kapanmış HTF barı). Kurallar önceden yazıldı: `tdi_x` = TL/BL
+  kesişmesi (göstergenin alarmı); `tdi_full` = kesişme + MZL + EMA skoru + HTF aynı yön. Ufuk 1 gün,
+  1σ stop, 2× hedef, aynı oynatma/maliyet/şans testi (`strategies.runPlans`), aynı kabul kuralı.
+  `node tdi.js --sentetik` (karşılaştırma: donch20, tsmom20) · `node tdi.js --offline --pages 40`.
+  Testler: `tdi.test.js` (önek = tam seri nedensellik testi dahil).
+* `sentetik.js` — sentetik piyasa: 10 varlık, GARCH(1,1) oynaklık, isteğe bağlı trend rejimleri
+  (ort. 15 gün, ±sürüklenme), bar içi 6 alt adım. Boru hattı sınaması: saf gürültüde hiçbir strateji
+  geçmemeli; trend rejiminde trend izleyiciler geçmeli. Gerçek veri yerine geçmez.
 * `engine.js` — veri (Binance, disk önbelleği), tarama, plan seviyeleri.
   `scanMarket` (canlı, Binance) ve `scanRows` (as-of, barlar verilir, ağ yok) ortak
   `scanCores` gövdesini paylaşır; `buildCore` barlardan kalibrasyon.
