@@ -1,0 +1,47 @@
+# Laboratuvar — strateji testlerini gerçek Binance verisiyle koşturur (bulut oturumunda Binance kapalı).
+# Elle: gh workflow run lab.yml -f komut="node tdi.js --pages 40"
+# Sonuç: koşunun Summary sekmesi + 'lab-sonuc' artifact'ı.
+name: lab
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["worker/tdi.js", ".github/workflows/lab.yml"]
+  workflow_dispatch:
+    inputs:
+      komut:
+        description: "worker/ içinde çalışacak komut"
+        required: false
+        default: "node tdi.js --pages 40"
+permissions:
+  contents: read
+concurrency:
+  group: lab-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CACHE_DIR: ${{ github.workspace }}/cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --omit=optional || npm install
+      - name: Koşu
+        run: |
+          set -o pipefail
+          ${{ github.event.inputs.komut || 'node tdi.js --pages 40' }} 2>&1 | tee sonuc.txt
+      - name: Özet
+        if: always()
+        run: |
+          { echo '```'; grep -v 'verisi…' sonuc.txt || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab-sonuc
+          path: worker/sonuc.txt
