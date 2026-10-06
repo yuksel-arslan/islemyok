@@ -194,6 +194,23 @@ kural çevirmek (revert3 → "devam").
 **Test edilmemiş adaylar (veri gerekli):** fonlama/basis carry (futures `fapi`; sitede modül var),
 haftalık ufuk momentum (günlük bar, 1–4 hafta tutuş, komisyon amorti).
 
+## BTMM|TDI testi (2026-10-06, `tdi.js`, kurallar önceden yazıldı)
+
+Gerçek veri: Binance 1h, 10 varlık, 40 sayfa (GitHub Actions `lab.yml`, koşu #1). Şans = aynı girişler rastgele yön.
+
+| Strateji | n | toplam R | ort R | t | şans ort. | p_şans | karar |
+|---|---|---|---|---|---|---|---|
+| tdi_x (TL/BL kesişmesi) | 18714 | −1418 | −0.08 | −14.3 | −1379 | 0.66 | kaldı |
+| tdi_full (+MZL+EMA+HTF) | 5645 | −450 | −0.08 | −7.2 | −430 | 0.62 | kaldı |
+| donch20 (kıyas) | 198 | +26 | +0.13 | 1.9 | −5 | 0.00 | kaldı (t<2.5) |
+| tsmom20 (kıyas) | 4013 | −59 | −0.01 | −1.2 | −114 | 0.14 | kaldı |
+
+Okuma: TDI'nin zararı rastgele yönle neredeyse aynı → kayıp komisyon, yön bilgisi ≈ 0. Sentetik
+sınama (`--sentetik --syms BTCUSDT`): gürültüde hepsi kaldı (boru hattı yanlış pozitif vermiyor);
+güçlü trend rejiminde (±%1.5/gün) tdi_full, donch20, tsmom20 GEÇTİ (göstergeler trendi yakalayabiliyor);
+zayıf trendde (±%0.5/gün) hiçbiri geçmedi. Yani gerçek 1h kripto verisinde sömürülebilir trend gücü
+bu göstergenin eşiğinin altında. **Karar: TDI kullanılmaz.**
+
 ## Bilinen sınırlar (v1)
 
 * Kapanış raporu yok (v1.1: açık planlar Neon'a yazılır, her koşuda SL/TP/BE kontrol edilir).
