@@ -86,14 +86,14 @@ function signalAt(I,i,full,vol){
   return I.mzl[i]===s&&Math.sign(I.score[i])===s&&I.htf[i]===s?s:0;
 }
 
-/* ---- plan listesi (dedupe + ters sinyalde kapatma, walkForward ile aynı) ---- */
-function tdiPlans(name,rowsBySym,tf,o={}){
-  const def=RULES[name];if(!def)throw new Error('kural yok: '+name);
+/* ---- olay tabanlı plan listesi (dedupe + ters sinyalde kapatma, walkForward ile aynı) ----
+   sigFor(bars,ms) → (i)=>yön; i. bar kapanışında yalnız 0..i barlarıyla karar. Diğer göstergeler de kullanır. */
+function eventPlans(name,def,rowsBySym,tf,sigFor,o={}){
   const pd=PD[tf],ms=TFMS[tf],hz=def.hzDays*pd,warm=o.warmup==null?2000:o.warmup;
   const disp=Object.fromEntries(ASSETS),ev=[];
   for(const sym in rowsBySym){const b=rowsBySym[sym];if(!b||b.length<warm+2)continue;
-    const I=compute(b,ms),vol=ewmaVol(b);
-    for(let i=warm;i<b.length;i++){const s=signalAt(I,i,def.full,def.vol);
+    const sig=sigFor(b,ms),vol=ewmaVol(b);
+    for(let i=warm;i<b.length;i++){const s=sig(i);
       if(s&&vol[i]>0)ev.push({sym,i,side:s,T:b[i].t,P0:b[i].c,v:vol[i]});}}
   ev.sort((a,b)=>a.T-b.T);
   const plans=[],open={};
@@ -104,12 +104,16 @@ function tdiPlans(name,rowsBySym,tf,o={}){
     plans.push(p);open[key]=p;}
   return plans;
 }
+function tdiPlans(name,rowsBySym,tf,o={}){
+  const def=RULES[name];if(!def)throw new Error('kural yok: '+name);
+  return eventPlans(name,def,rowsBySym,tf,(b,ms)=>{const I=compute(b,ms);return i=>signalAt(I,i,def.full,def.vol);},o);
+}
 
 function runTdi(name,rowsBySym,tf,o={}){
   return runPlans(name,tdiPlans(name,rowsBySym,tf,o),rowsBySym,{controls:o.controls});
 }
 
-module.exports={RULES,sma,ema,rma,rsi,compute,signalAt,tdiPlans,runTdi};
+module.exports={RULES,PD,sma,ema,rma,rsi,compute,signalAt,eventPlans,tdiPlans,runTdi};
 
 if(require.main===module){
   (async()=>{

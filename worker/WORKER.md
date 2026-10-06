@@ -116,6 +116,10 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
   1σ stop, 2× hedef, aynı oynatma/maliyet/şans testi (`strategies.runPlans`), aynı kabul kuralı.
   `node tdi.js --sentetik` (karşılaştırma: donch20, tsmom20) · `node tdi.js --offline --pages 40`.
   Testler: `tdi.test.js` (önek = tam seri nedensellik testi dahil).
+* `mavilim.js` — **Mavilim göstergesi testi** (Kıvanç Özbilgiç): art arda WMA 3/5/8/13/21/34.
+  Kurallar önceden yazıldı: `mav_renk` (eğim/renk dönüşü), `mav_kesis` (kapanış MAVW'yi keser),
+  `*_vol` (+ hacim > SMA20). Plan makinesi `tdi.eventPlans` (aynı stop/hedef/dedupe/şans testi).
+  `node mavilim.js --pages 40 --syms BTCUSDT` · `--sentetik`. Testler: `mavilim.test.js`.
 * `sentetik.js` — sentetik piyasa: 10 varlık, GARCH(1,1) oynaklık, isteğe bağlı trend rejimleri
   (ort. 15 gün, ±sürüklenme), bar içi 6 alt adım. Boru hattı sınaması: saf gürültüde hiçbir strateji
   geçmemeli; trend rejiminde trend izleyiciler geçmeli. Gerçek veri yerine geçmez.
