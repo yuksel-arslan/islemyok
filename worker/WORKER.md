@@ -230,6 +230,19 @@ Hacim koşulu (hacim > SMA20), yalnız BTCUSDT, 40k bar 2022-03 → 2026-10 (ko�
 Hacim işlem sayısını ~%57 / %39 azalttı, toplam zarar aynı oranda küçüldü; işlem başına R değişmedi
 (−0.12/−0.13). Filtre kaybı küçültüyor, kenar yaratmıyor.
 
+## Mavilim testi (2026-10-06, `mavilim.js`, BTCUSDT 1h, 40k bar 2022-03 → 2026-10, koşu #4)
+
+| Strateji | n | toplam R | ort R | t | şans ort. | p_şans | karar |
+|---|---|---|---|---|---|---|---|
+| mav_renk | 848 | −73 | −0.09 | −3.2 | −94 | 0.22 | kaldı |
+| mav_kesis | 2668 | −307 | −0.12 | −11.1 | −333 | 0.16 | kaldı |
+| mav_renk_vol | 327 | −31 | −0.09 | −2.0 | −39 | 0.30 | kaldı |
+| mav_kesis_vol | 1287 | −124 | −0.10 | −5.1 | −158 | 0.00 | kaldı |
+
+Hepsi zararda. mav_kesis_vol rastgele yönden iyi (p=0.00, +34R fark ≈ +0.03R/işlem) ama komisyonu
+karşılamıyor; kabul için ort. R>0 ve t≥2.5 gerekir. Sentetik güçlü trendde de geçmedi (1h'te ~1 günlük
+gecikme, sık testere). **Karar: Mavilim 1h'te kullanılmaz.**
+
 ## Bilinen sınırlar (v1)
 
 * Kapanış raporu yok (v1.1: açık planlar Neon'a yazılır, her koşuda SL/TP/BE kontrol edilir).
