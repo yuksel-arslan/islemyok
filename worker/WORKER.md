@@ -109,7 +109,10 @@ Koşu süresi: ilk gün ~2-3 dk (veri indirme), sonrası ~30-60 sn (artımlı ö
 * `tdi.js` — **BTMM|TDI göstergesi testi** (TradingView, The_Trading_Jedi). Pine hesaplarının
   nedensel kopyası: RSI21 (Wilder), TL=SMA7, BL=SMA34, MZL (DEMA12−DEMA26), EMA 13/50/200/800 skoru,
   3× zaman dilimi eğilimi (yalnız kapanmış HTF barı). Kurallar önceden yazıldı: `tdi_x` = TL/BL
-  kesişmesi (göstergenin alarmı); `tdi_full` = kesişme + MZL + EMA skoru + HTF aynı yön. Ufuk 1 gün,
+  kesişmesi (göstergenin alarmı); `tdi_full` = kesişme + MZL + EMA skoru + HTF aynı yön.
+  `tdi_x_vol` / `tdi_full_vol` = ek koşul: kesişme barının hacmi > SMA20(hacim). Hacim için
+  `engine.klines` artık `v` alanını da saklar; eski önbellekte `v` yoksa *_vol işlem açmaz
+  (önbelleği silip yeniden indir). Ufuk 1 gün,
   1σ stop, 2× hedef, aynı oynatma/maliyet/şans testi (`strategies.runPlans`), aynı kabul kuralı.
   `node tdi.js --sentetik` (karşılaştırma: donch20, tsmom20) · `node tdi.js --offline --pages 40`.
   Testler: `tdi.test.js` (önek = tam seri nedensellik testi dahil).

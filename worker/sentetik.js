@@ -1,6 +1,6 @@
 /* İşlem Yok — sentetik piyasa (laboratuvar boru hattı sınaması)
    10 varlık, GARCH(1,1) oynaklık kümelenmesi, isteğe bağlı trend rejimleri: rejim süresi üstel
-   (ort. 15 gün), her rejimde sürüklenme ±driftPerDay (yön yazı-tura). Bar içi yol 6 alt adım →
+   (ort. 15 gün), her rejimde sürüklenme ±driftPerDay (yön yazı-tura). Hacim: lognormal gürültü × (1+|getiri|/σ). Bar içi yol 6 alt adım →
    gerçekçi en yüksek/en düşük. driftPerDay=0 → saf gürültü: hiçbir strateji GEÇMEMELİ. */
 'use strict';
 const {ASSETS}=require('./engine');
@@ -20,7 +20,7 @@ function seri({seed=7,bars=40000,driftPerDay=0,tf='1h',volDay=0.035,regimeDays=1
     v=w+al*eps*eps+be*v;const s=Math.sqrt(v);
     const o=c;let h=o,l=o,x=o,tot=0;
     for(let k=0;k<SUB;k++){const r=mu/SUB+s/Math.sqrt(SUB)*R.g();tot+=r;x*=Math.exp(r);if(x>h)h=x;if(x<l)l=x;}
-    eps=tot-mu;c=x;out.push({t,o,h,l,c});t+=ms;}
+    eps=tot-mu;c=x;out.push({t,o,h,l,c,v:1000*Math.exp(0.4*R.g())*(1+Math.abs(tot)/sBar)});t+=ms;}
   return out;
 }
 function senaryo(o={}){const rows={};ASSETS.forEach(([sym],k)=>{rows[sym]=seri({...o,seed:(o.seed||7)*1000+k+1});});return rows;}

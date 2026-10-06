@@ -8,6 +8,8 @@
        KAPANMIŞ HTF barı.
      tdi_x    : TL, BL'yi yukarı keser → long; aşağı keser → short (göstergenin alarmı).
      tdi_full : tdi_x + MZL aynı işaret + EMA skoru aynı işaret + HTF eğilimi aynı yön.
+     *_vol    : (2026-10-06 eki) yukarıdakilere ek koşul — kesişme barının hacmi > SMA20(hacim)
+                (Pine: volume > ta.sma(volume, 20)). Hacim yoksa işlem yok.
      Giriş kesişme barının kapanışı; ufuk 1 gün, stop 1σ·√ufuk (nedensel EWMA vol), hedef 2×stop,
      TP1'de yarım + stop girişe (replay.js). Maliyet 22bp gidiş-dönüş. Açık sym+yön varken yeniden
      açmaz, ters sinyal açığı kapatır (walkForward ile aynı).
@@ -23,7 +25,8 @@ const {TFMS}=require('./backtest');
 const {ASSETS}=require('./engine');
 
 const PD={'1h':24,'4h':6,'1d':1};
-const RULES={tdi_x:{hzDays:1,rm:2,full:false},tdi_full:{hzDays:1,rm:2,full:true}};
+const RULES={tdi_x:{hzDays:1,rm:2,full:false},tdi_full:{hzDays:1,rm:2,full:true},
+  tdi_x_vol:{hzDays:1,rm:2,full:false,vol:true},tdi_full_vol:{hzDays:1,rm:2,full:true,vol:true}};
 
 /* ---- Pine yardımcıları (na → NaN) ---- */
 function sma(x,L){const o=new Float64Array(x.length).fill(NaN);let s=0,c=0;
@@ -70,12 +73,15 @@ function compute(bars,ms){
   let j=-1;
   for(let i=0;i<n;i++){while(j+1<hEnd.length&&hEnd[j+1]<=i)j++;
     if(j>=0&&isFinite(hrp[j])&&isFinite(htl[j]))htf[i]=hrp[j]-htl[j]>0?1:-1;}
-  return {cross,mzl,score,htf,rsi:r,tl,bl};
+  const v=bars.map(b=>b.v==null?NaN:+b.v),vs=sma(v,20),volOk=new Int8Array(n);
+  for(let i=0;i<n;i++)volOk[i]=v[i]>vs[i]?1:0;
+  return {cross,mzl,score,htf,volOk,rsi:r,tl,bl};
 }
 
 /* tek bar için yön kararı */
-function signalAt(I,i,full){
+function signalAt(I,i,full,vol){
   const s=I.cross[i];if(!s)return 0;
+  if(vol&&!I.volOk[i])return 0;
   if(!full)return s;
   return I.mzl[i]===s&&Math.sign(I.score[i])===s&&I.htf[i]===s?s:0;
 }
@@ -87,7 +93,7 @@ function tdiPlans(name,rowsBySym,tf,o={}){
   const disp=Object.fromEntries(ASSETS),ev=[];
   for(const sym in rowsBySym){const b=rowsBySym[sym];if(!b||b.length<warm+2)continue;
     const I=compute(b,ms),vol=ewmaVol(b);
-    for(let i=warm;i<b.length;i++){const s=signalAt(I,i,def.full);
+    for(let i=warm;i<b.length;i++){const s=signalAt(I,i,def.full,def.vol);
       if(s&&vol[i]>0)ev.push({sym,i,side:s,T:b[i].t,P0:b[i].c,v:vol[i]});}}
   ev.sort((a,b)=>a.T-b.T);
   const plans=[],open={};

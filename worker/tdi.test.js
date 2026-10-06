@@ -36,3 +36,20 @@ test('tdiPlans: ayni sym+yön açıkken tekrar açmaz, planlar zaman sıralı', 
   const last={};for(const p of P){const key=p.sym+'|'+p.side;
     if(last[key])assert.ok(last[key].t_end<=p.t0,'çakışan aynı yön planı');last[key]=p;}
 });
+
+test('hacim koşulu: hacim SMA20 altında → *_vol sinyal vermez, üstünde → verir; hacim yoksa vermez', ()=>{
+  const I={cross:Int8Array.from([0,1]),volOk:Int8Array.from([0,0]),mzl:[],score:[],htf:[]};
+  assert.strictEqual(signalAt(I,1,false,false),1);
+  assert.strictEqual(signalAt(I,1,false,true),0);
+  I.volOk[1]=1;assert.strictEqual(signalAt(I,1,false,true),1);
+  const b=mk(Array.from({length:60},(_,i)=>100+i));            // v alanı yok
+  assert.ok(compute(b,H).volOk.every(x=>x===0));
+  const bv=b.map((x,i)=>({...x,v:i===59?50:10}));
+  const J=compute(bv,H);assert.strictEqual(J.volOk[59],1);assert.strictEqual(J.volOk[58],0);
+});
+
+test('*_vol planları temel kuralın alt kümesi', ()=>{
+  const r=senaryo({bars:4000,seed:5});
+  const key=p=>p.sym+p.t0+p.side,base=new Set(tdiPlans('tdi_x',r,'1h').map(key)),vol=tdiPlans('tdi_x_vol',r,'1h');
+  assert.ok(vol.length>0&&vol.length<base.size);
+});

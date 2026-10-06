@@ -43,7 +43,7 @@ async function klines(sym,tf,pages){
     for(let g=0;g<pages&&have.length<pages*1000;g++){
       const d=await fetch1(`https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=1000&endTime=${have[0].t-1}`);
       if(!d.length)break;
-      const older=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]})).filter(x=>x.t<have[0].t);
+      const older=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]})).filter(x=>x.t<have[0].t);
       if(!older.length)break;
       have=older.concat(have);
       if(d.length<1000)break;
@@ -52,7 +52,7 @@ async function klines(sym,tf,pages){
     for(let g=0;g<pages;g++){
       const d=await fetch1(`https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=1000&startTime=${start}`);
       if(!d.length)break;
-      const add=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
+      const add=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}));
       const last=have[have.length-1].t;
       const repl=add.find(x=>x.t===last);if(repl)have[have.length-1]=repl;
       for(const x of add)if(x.t>last)have.push(x);
@@ -67,7 +67,7 @@ async function klines(sym,tf,pages){
       out.unshift(...d);end=d[0][0]-1;await sleep(80);}
     const seen=new Set();
     for(const k of out){if(seen.has(k[0]))continue;seen.add(k[0]);
-      have.push({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]});}
+      have.push({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]});}
   }
   have.sort((a,b)=>a.t-b.t);
   const trimmed=have.slice(-pages*1000);
