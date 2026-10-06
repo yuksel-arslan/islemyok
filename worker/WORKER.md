@@ -214,6 +214,18 @@ güçlü trend rejiminde (±%1.5/gün) tdi_full, donch20, tsmom20 GEÇTİ (göst
 zayıf trendde (±%0.5/gün) hiçbiri geçmedi. Yani gerçek 1h kripto verisinde sömürülebilir trend gücü
 bu göstergenin eşiğinin altında. **Karar: TDI kullanılmaz.**
 
+Hacim koşulu (hacim > SMA20), yalnız BTCUSDT, 40k bar 2022-03 → 2026-10 (koşu #3):
+
+| Strateji | n | toplam R | ort R | t | şans ort. | p_şans | karar |
+|---|---|---|---|---|---|---|---|
+| tdi_x | 1858 | −226 | −0.12 | −7.3 | −201 | 0.80 | kaldı |
+| tdi_full | 567 | −79 | −0.14 | −4.0 | −61 | 0.86 | kaldı |
+| tdi_x_vol | 797 | −94 | −0.12 | −4.1 | −79 | 0.76 | kaldı |
+| tdi_full_vol | 348 | −47 | −0.13 | −2.9 | −39 | 0.68 | kaldı |
+
+Hacim işlem sayısını ~%57 / %39 azalttı, toplam zarar aynı oranda küçüldü; işlem başına R değişmedi
+(−0.12/−0.13). Filtre kaybı küçültüyor, kenar yaratmıyor.
+
 ## Bilinen sınırlar (v1)
 
 * Kapanış raporu yok (v1.1: açık planlar Neon'a yazılır, her koşuda SL/TP/BE kontrol edilir).
