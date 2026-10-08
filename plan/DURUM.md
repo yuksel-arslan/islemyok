@@ -1,4 +1,6 @@
-# Durum — haftalık güncellenir (ajan)
+# Durum — KAPATILDI (2026-10-08)
+
+Proje sonlandırıldı, haftalık ajan kaldırıldı; aşağıdaki plan ve bekleyen işler geçersiz. Bkz. kök `README.md`.
 
 Son güncelleme: 2026-09-17 (ilk GitHub Actions koşusu · ajan turu 2026-38)
 

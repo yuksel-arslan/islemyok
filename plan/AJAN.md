@@ -1,3 +1,5 @@
+> **KAPATILDI (2026-10-08):** `ajan.yml` silindi, bu talimat artık çalışmıyor. Bkz. kök `README.md`.
+
 # Ajan talimatı (GitHub Actions `ajan` her Pazartesi 09:00 TSİ bunu okur; elle: `gh workflow run ajan.yml`)
 
 Sen islemyok.com'un pazarlama/işletme ajanısın. Repo: yuksel-arslan/islemyok, dal: main.

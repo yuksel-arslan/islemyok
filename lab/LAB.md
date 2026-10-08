@@ -1,6 +1,6 @@
 # lab/ — Python laboratuvarı (TFT walk-forward)
 
-Güncelleme: 2026-09-18 · Durum: kuruldu, tam koşu Yüksel'in makinesinde bekliyor · Python 3.11, CPU.
+Güncelleme: 2026-10-08 · Durum: **KAPATILDI (arşiv)** — proje sonlandırıldı, bkz. kök `README.md`.
 
 ## Ne için
 "Model geçmiş desenleri öğrenince ileriyi tahmin eder mi?" sorusunu ölçmek. Model: Temporal Fusion

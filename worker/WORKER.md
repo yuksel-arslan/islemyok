@@ -1,6 +1,6 @@
 # İşlem Yok — Telegram Worker
 
-Güncelleme: 2026-09-17 · Durum: v1 (günlük tarama + yayın). v1.1 planı: işlem kapanış takibi (Neon).
+Güncelleme: 2026-10-08 · Durum: **KAPATILDI (arşiv)** — proje sonlandırıldı, bkz. kök `README.md`.
 
 Kaynak: <https://github.com/yuksel-arslan/islemyok> — bu klasör repo içinde `worker/`.
 

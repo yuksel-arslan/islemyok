@@ -1,5 +1,16 @@
 # İşlem Yok
 
+> **ARŞİV — 2026-10-08 itibarıyla kapatıldı.** Proje sonlandırıldı; odak traderpath.io.
+> Haftalık ajan (`ajan.yml`) kaldırıldı. Telegram worker repo dışında durdurulacak (aşağıdaki liste).
+> Kod ve bulgular başvuru için burada duruyor; yeni geliştirme yapılmaz.
+>
+> **Ana bulgu (3 ay):** test edilen model, 10 kural tabanlı strateji ve 5 Telegram sinyal kanalının
+> hiçbiri gerçek fiyatlarla, komisyon sonrası yazı-turayı yenemedi. Ayrıntı: `site/strateji-testleri.html`.
+>
+> **Repo dışında kapatılacaklar (sahip):** Railway `islemyok-worker` servisi · Neon veritabanı ·
+> Telegram `@islemyok` kanalı (son mesajdan sonra arşiv) · Binance referans / AdSense hesabı ·
+> site (Cloudflare Pages `islemyok-site`) için karar: kaldır ya da yönlendir.
+
 islemyok.com'un tamamı: tarayıcıda çalışan araç ve onu her sabah Telegram'a
 taşıyan worker.
 
